@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#9966ff</color>
+    <color name="colorPrimaryDark">#9966ff</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="colorStatusBar">#E0E0E0</color>
+    <color name="colorAppBar">#F5F5F5</color>
+    <color name="colorBackground">#FAFAFA</color>
+
+    <color name="colorCards">#FFFFFF</color>
+    <color name="colorDialogs">#FFFFFF</color>
+
+    <color name="textColorDarkPrimary">#df000000</color>
+    <color name="textColorDarkSecondary">#8a000000</color>
+    <color name="textColorDarkDisabled">#61000000</color>
+
+    <color name="textColorWhitePrimary">#ffffff</color>
+    <color name="textColorWhiteSecondary">#b3ffffff</color>
+    <color name="textColorWhiteDisabled">#80ffffff</color>
+</resources>
