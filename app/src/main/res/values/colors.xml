@@ -17,4 +17,22 @@
     <color name="textColorWhitePrimary">#ffffff</color>
     <color name="textColorWhiteSecondary">#b3ffffff</color>
     <color name="textColorWhiteDisabled">#80ffffff</color>
+
+    <color name="light_peach">#fec6a4</color>
+
+    <color name="cool_grey">#b0bec5</color>
+
+    <color name="slate">#455a64</color>
+
+    <color name="silver">#d5d8e0</color>
+
+    <color name="charcoal_grey">#3c3f45</color>
+
+    <color name="hint">#60000000</color>
+
+    <color name="bg_grey">#f3f6ff</color>
+
+    <color name="blochain_added">#FFDEAD </color>
+
+    <color name="black_overlay">#66000000</color>
 </resources>

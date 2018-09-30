@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="55dp"
+    android:layout_marginTop="8dp"
+    android:background="@color/bg_grey"
+    android:orientation="vertical">
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="55dp"
+        android:background="#ffffff"
+        android:orientation="horizontal"
+        android:padding="15dp"
+        android:layout_marginLeft="5dp">
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="21dp"
+            android:scaleType="centerCrop"
+            android:id="@+id/icon"
+            android:src="@drawable/wifi_strength_1"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="13dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/ssid"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="WiFi Name"
+                android:textColor="#000000"
+                android:textSize="15dp" />
+
+            <TextView
+                android:id="@+id/price"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:text="Price: 0000"
+                android:textColor="#666666"
+                android:textSize="16sp"
+                android:visibility="invisible" />
+
+        </LinearLayout>
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_arrow_right"/>
+    </LinearLayout>
+</LinearLayout>
