@@ -11,7 +11,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.khanj.wificontract.R;
-import com.example.khanj.wificontract.model.RecyclerViewItem;
+import com.example.khanj.wificontract.model.WifiListModel;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,7 +21,7 @@ import java.util.Comparator;
 public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ViewHolder> {
     Context getclass;
     // Adapter에 추가된 데이터를 저장하기 위한 ArrayList
-    public ArrayList<RecyclerViewItem> Recycleritemlist = new ArrayList<>();
+    public ArrayList<WifiListModel> Recycleritemlist = new ArrayList<>();
 
     // ListViewAdapter의 생성자
     public WifiListAdapter(Context getclass) {
@@ -38,20 +38,20 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ViewHo
     public void onBindViewHolder(ViewHolder viewHolder, int position) {
 
         // Data Set(listViewItemRecycler)에서 position에 위치한 데이터 참조 획득
-        RecyclerViewItem recyclerViewItem = Recycleritemlist.get(position);
+        WifiListModel wifiListModel = Recycleritemlist.get(position);
 
-        if(recyclerViewItem.getAvai()) {
+        if(wifiListModel.getAvai()) {
             // 아이템 내 각 위젯에 데이터 반영
-            viewHolder.iconImageView.setImageDrawable(recyclerViewItem.getIcon());
-            viewHolder.titleTextView.setText(recyclerViewItem.getSsid());
+            viewHolder.iconImageView.setImageDrawable(wifiListModel.getIcon());
+            viewHolder.titleTextView.setText(wifiListModel.getSsid());
 
             viewHolder.titleTextView.setTextColor(Color.parseColor("#FF0000"));
 
-            viewHolder.descTextView.setText(recyclerViewItem.getSsid());
+            viewHolder.descTextView.setText(wifiListModel.getSsid());
         }else{
-            viewHolder.iconImageView.setImageDrawable(recyclerViewItem.getIcon());
-            viewHolder.titleTextView.setText(recyclerViewItem.getSsid());
-            viewHolder.descTextView.setText(recyclerViewItem.getSsid());
+            viewHolder.iconImageView.setImageDrawable(wifiListModel.getIcon());
+            viewHolder.titleTextView.setText(wifiListModel.getSsid());
+            viewHolder.descTextView.setText(wifiListModel.getSsid());
         }
     }
 
@@ -82,7 +82,7 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ViewHo
     }
 
     // 지정한 위치(position)에 있는 데이터 리턴 : 필수 구현
-    public RecyclerViewItem getObject(int position) {
+    public WifiListModel getObject(int position) {
         return Recycleritemlist.get(position);
     }
 
@@ -92,10 +92,10 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ViewHo
 
     // 아이템 데이터 추가를 위한 함수. 개발자가 원하는대로 작성 가능. (와이파이 상태)
     public void addItem(String ssid, String bssid, int rssi, Drawable icon, String securityMode) {
-        RecyclerViewItem item = new RecyclerViewItem();
+        WifiListModel item = new WifiListModel();
         boolean available = true;
         for (int i = 0; i < Recycleritemlist.size(); i++) {
-            RecyclerViewItem items = Recycleritemlist.get(i);
+            WifiListModel items = Recycleritemlist.get(i);
             if (items.getSsid() != null) {
                 if (items.getSsid().equals(ssid)) {
                     available = false;
@@ -119,9 +119,9 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ViewHo
 
 
     public void itemSort() {
-        Collections.sort(Recycleritemlist, new Comparator<RecyclerViewItem>() {
+        Collections.sort(Recycleritemlist, new Comparator<WifiListModel>() {
             @Override
-            public int compare(RecyclerViewItem o1, RecyclerViewItem o2) {
+            public int compare(WifiListModel o1, WifiListModel o2) {
                 if (o1.getRssi() > o2.getRssi()) {
                     return 1;
                 } else if (o1.getRssi() < o2.getRssi()) {
@@ -138,7 +138,7 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ViewHo
 //
 //    public int itemColorChange(String macaddress){
 //        for (int i = 0; i < Recycleritemlist.size(); i++) {
-//            RecyclerViewItem items = Recycleritemlist.get(i);
+//            WifiListModel items = Recycleritemlist.get(i);
 //            if ( items.getPrice()!=null && items.getPrice().equals(macaddress)) {
 //                return i;
 //            }

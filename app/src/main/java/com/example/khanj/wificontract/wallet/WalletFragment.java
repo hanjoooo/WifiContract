@@ -78,7 +78,7 @@ public class WalletFragment extends LoadingFragment implements View.OnClickListe
     @SuppressLint("StaticFieldLeak")
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        final View v = inflater.inflate(R.layout.fragment_wallet, container, false);
+        final View v = inflater.inflate(R.layout.fragment3_wallet, container, false);
         web3j = Web3jFactory.build(new HttpService("https://ropsten.infura.io/wd7279F18YpzuVLkfZTk"));
 
         buildButtons(v);

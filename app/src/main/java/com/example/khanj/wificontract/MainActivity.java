@@ -12,7 +12,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.widget.TextView;
 
-import com.example.khanj.wificontract.Wifi.WiFiListFragment;
+import com.example.khanj.wificontract.Wifi.WifiEnrollFragment;
+import com.example.khanj.wificontract.Wifi.WifiListFragment;
 import com.example.khanj.wificontract.event.ActivityResultEvent;
 import com.example.khanj.wificontract.handler.BackPressHandler;
 import com.example.khanj.wificontract.wallet.BusProvider;
@@ -48,12 +49,12 @@ public class MainActivity extends AppCompatActivity {
             if (item==preitem) return false;
             switch (item.getItemId()) {
                 case R.id.nav_home:
-                    replaceViewPager(new WiFiListFragment());
+                    replaceViewPager(new WifiListFragment());
                     txt_title.setText("WIFI");
                     preitem = item;
                     return true;
                 case R.id.nav_cardlist:
-                    replaceViewPager(new BlankFragment());
+                    replaceViewPager(new WifiEnrollFragment());
                     txt_title.setText("WIFI");
                     preitem = item;
                     return true;
@@ -77,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
                 Manifest.permission.ACCESS_FINE_LOCATION }, 1);
 
         Realm.init(this);
-        replaceViewPager(new WiFiListFragment());
+        replaceViewPager(new WifiListFragment());
         txt_title.setText("WIFI");
 
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
