@@ -2,7 +2,7 @@ package com.example.khanj.wificontract.model;
 
 import android.graphics.drawable.Drawable;
 
-public class RecyclerViewItem {
+public class WifiListModel {
     private Drawable icon;
     private String ssid;
     private String price;

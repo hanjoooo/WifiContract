@@ -27,13 +27,13 @@ import android.widget.Toast;
 
 import com.example.khanj.wificontract.R;
 import com.example.khanj.wificontract.adapter.WifiListAdapter;
-import com.example.khanj.wificontract.model.RecyclerViewItem;
+import com.example.khanj.wificontract.model.WifiListModel;
 
 import java.util.HashMap;
 import java.util.List;
 
 
-public class WiFiListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
+public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
 
     private WifiListAdapter adapter;
     private List<ScanResult> scanDatas;
@@ -53,9 +53,6 @@ public class WiFiListFragment extends Fragment implements SwipeRefreshLayout.OnR
         // 우리는 wifi를 굳이 킬 필요가 있을까?
 
         View view = inflater.inflate(R.layout.fragment1_wifi_list, container, false);
-
-
-
 
         // RecyclerView를 Fragment에 추가하기 위한 코드
         rvwifilist = view.findViewById(R.id.wifilist);
@@ -98,7 +95,7 @@ public class WiFiListFragment extends Fragment implements SwipeRefreshLayout.OnR
                     int currentPosition = rv.getChildAdapterPosition(childView);
 
                     // itemlist의 item 변수 생성
-                    RecyclerViewItem item = adapter.getObject(currentPosition);
+                    WifiListModel item = adapter.getObject(currentPosition);
 
                     String ssid = item.getSsid();
 
@@ -166,12 +163,12 @@ public class WiFiListFragment extends Fragment implements SwipeRefreshLayout.OnR
                         }
                     }
                     else{
-                        AlertDialog.Builder ad = new AlertDialog.Builder(WiFiListFragment.this.getActivity());
+                        AlertDialog.Builder ad = new AlertDialog.Builder(WifiListFragment.this.getActivity());
 
                         ad.setTitle("비밀번호");       // 제목 설정
                         ad.setMessage("비밀번호를 입력하시오");   // 내용 설정
                         // EditText 삽입하기
-                        final EditText et = new EditText(WiFiListFragment.this.getActivity());
+                        final EditText et = new EditText(WifiListFragment.this.getActivity());
                         ad.setView(et);
 
                         // 확인 버튼 설정
