@@ -82,17 +82,11 @@ public class WalletFragment extends LoadingFragment implements View.OnClickListe
         web3j = Web3jFactory.build(new HttpService("https://ropsten.infura.io/wd7279F18YpzuVLkfZTk"));
 
         buildButtons(v);
-
         buildRecyclerView(v);
-
         coordinatorLayout = v.findViewById(R.id.coordinatorlayout);
-
         mRealm = Realm.getDefaultInstance();
-
         //getClientVersion();
-
         getObject();
-
         return v;
     }
 
