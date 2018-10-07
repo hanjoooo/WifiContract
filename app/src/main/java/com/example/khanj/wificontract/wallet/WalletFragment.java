@@ -25,6 +25,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.example.khanj.wificontract.Contract;
 import com.example.khanj.wificontract.R;
 import com.example.khanj.wificontract.adapter.WalletRecyclerViewAdapter;
 import com.example.khanj.wificontract.event.ActivityResultEvent;
@@ -41,6 +42,7 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jFactory;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.http.HttpService;
+import org.web3j.tx.ManagedTransaction;
 import org.web3j.tx.Transfer;
 import org.web3j.utils.Convert;
 
@@ -51,6 +53,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import contract.EtherWifiToken;
 import io.realm.Realm;
 import io.realm.RealmResults;
 
@@ -67,7 +70,7 @@ public class WalletFragment extends LoadingFragment implements View.OnClickListe
     private Web3j web3j;
     private List<Credentials> credentials = new ArrayList<>();
     private Realm mRealm;
-    private String contractAddress = "0xc4f089BC18CF1Ba71249367294C227BdFc9eb236";
+    private String contractAddress = "0x5ecaec5887d0c3f43f27a42c8ed2da7a95d8f51f";
     private Button btn_attachWallet, btn_attachContract, btn_sendether;
     private RecyclerView rv;
     private WalletRecyclerViewAdapter adapter;
@@ -168,7 +171,6 @@ public class WalletFragment extends LoadingFragment implements View.OnClickListe
 
     private void sendEth(int index, String othersAddress, String price){
         new AsyncTask(){
-
             @Override
             protected Object doInBackground(Object[] objects) {
                 try {
@@ -255,7 +257,7 @@ public class WalletFragment extends LoadingFragment implements View.OnClickListe
     @Override
     public void onClick(View v) {
         if(v.getId()==R.id.btn_attach_wallet) startActivityForResult(new Intent(getActivity(), GenerationActivity.class),1);
-        //else if (v.getId()==R.id.btn_attach_contract) generateNewContract();
+        else if (v.getId()==R.id.btn_attach_contract) generateNewContract();
         else if (v.getId()==R.id.btn_send_ether_other) sendEtherTo();
         //else if (v.getId()==R.id.btn_get_contract) getMyContract();
     }
@@ -342,16 +344,15 @@ public class WalletFragment extends LoadingFragment implements View.OnClickListe
             }
         }
     }
-/*
+
     private void getMyContract(){
         new AsyncTask(){
             @Override
             protected Object doInBackground(Object[] objects) {
-                Coupondeal contract = Coupondeal.load(contractAddress, web3j, credentials.get(0),ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
+                EtherWifiToken contract = EtherWifiToken.load(contractAddress, web3j, credentials.get(0),ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
 
                 try {
-                    Log.d("TAG","asd:  "+ String.valueOf(contract.getCouponList(BigInteger.valueOf(0)).send()));
-                    Log.d("TAG","asd:  "+ String.valueOf(contract.getCouponList(BigInteger.valueOf(1)).send()));
+                    Log.d("TAG","asd:  "+ String.valueOf(contract.getContractAddress()));
                 } catch (Exception e) {
                     e.printStackTrace();
                     Log.d("TAG", String.valueOf(e));
@@ -360,17 +361,16 @@ public class WalletFragment extends LoadingFragment implements View.OnClickListe
             }
         }.execute();
     }
-*/
-/*
+
 
     private void generateNewContract(){
         new AsyncTask(){
             @Override
             protected Object doInBackground(Object[] objects) {
                 Log.d("TAG", "Deploying smart contract");
-                Coupondeal contract = null;
+                EtherWifiToken contract = null;
                 try {
-                    contract = Coupondeal.deploy(
+                    contract = EtherWifiToken.deploy(
                             web3j, credentials.get(0),
                             ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT).send();
                     contractAddress = contract.getContractAddress();
@@ -384,7 +384,7 @@ public class WalletFragment extends LoadingFragment implements View.OnClickListe
             }
         }.execute();
     }
-*/
+
     public void startProgresss(){
         progressON(getActivity(),"송금중...");
     }

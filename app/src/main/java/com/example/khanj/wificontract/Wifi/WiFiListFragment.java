@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 
 
-public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
+public class WiFiListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
 
     private WifiListAdapter adapter;
     private List<ScanResult> scanDatas;
@@ -163,12 +163,12 @@ public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnR
                         }
                     }
                     else{
-                        AlertDialog.Builder ad = new AlertDialog.Builder(WifiListFragment.this.getActivity());
+                        AlertDialog.Builder ad = new AlertDialog.Builder(WiFiListFragment.this.getActivity());
 
                         ad.setTitle("비밀번호");       // 제목 설정
                         ad.setMessage("비밀번호를 입력하시오");   // 내용 설정
                         // EditText 삽입하기
-                        final EditText et = new EditText(WifiListFragment.this.getActivity());
+                        final EditText et = new EditText(WiFiListFragment.this.getActivity());
                         ad.setView(et);
 
                         // 확인 버튼 설정
