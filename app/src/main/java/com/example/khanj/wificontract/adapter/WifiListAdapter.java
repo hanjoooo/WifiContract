@@ -40,6 +40,7 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ViewHo
         // Data Set(listViewItemRecycler)에서 position에 위치한 데이터 참조 획득
         WifiListModel wifiListModel = Recycleritemlist.get(position);
 
+
         if(wifiListModel.getAvai()) {
             // 아이템 내 각 위젯에 데이터 반영
             viewHolder.iconImageView.setImageDrawable(wifiListModel.getIcon());
@@ -48,10 +49,15 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ViewHo
             viewHolder.titleTextView.setTextColor(Color.parseColor("#FF0000"));
 
             viewHolder.descTextView.setText(wifiListModel.getSsid());
+
         }else{
             viewHolder.iconImageView.setImageDrawable(wifiListModel.getIcon());
             viewHolder.titleTextView.setText(wifiListModel.getSsid());
             viewHolder.descTextView.setText(wifiListModel.getSsid());
+        }
+
+        if(wifiListModel.getAvai()){
+            viewHolder.titleTextView.setTextColor(Color.BLUE);
         }
     }
 
@@ -91,7 +97,7 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ViewHo
 
 
     // 아이템 데이터 추가를 위한 함수. 개발자가 원하는대로 작성 가능. (와이파이 상태)
-    public void addItem(String ssid, String bssid, int rssi, Drawable icon, String securityMode) {
+    public void addItem(String ssid, String bssid, int rssi, Drawable icon, String securityMode,Boolean trueorfalse) {
         WifiListModel item = new WifiListModel();
         boolean available = true;
         for (int i = 0; i < Recycleritemlist.size(); i++) {
@@ -113,8 +119,12 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ViewHo
             item.setPrice(bssid);
             item.setIcon(icon);
             item.setSecurityMode(securityMode);
+            item.setAvai(trueorfalse);
             Recycleritemlist.add(item);
+            this.notifyDataSetChanged();
         }
+
+
     }
 
 

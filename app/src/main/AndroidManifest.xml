@@ -26,7 +26,6 @@
         <activity
             android:name=".generation.GenerationActivity"
             android:theme="@android:style/Theme.DeviceDefault.Light.Dialog.NoActionBar" />
-        <activity android:name=".WifiEnrollActivity"></activity>
     </application>
 
 </manifest>

@@ -70,7 +70,8 @@ public class WalletFragment extends LoadingFragment implements View.OnClickListe
     private Web3j web3j;
     private List<Credentials> credentials = new ArrayList<>();
     private Realm mRealm;
-    private String contractAddress = "0x5ecaec5887d0c3f43f27a42c8ed2da7a95d8f51f";
+    private String contractAddress = "0x2466f0f59aa8ffb83a7425ad9d7ad02f5e27ba06";
+
     private Button btn_attachWallet, btn_attachContract, btn_sendether;
     private RecyclerView rv;
     private WalletRecyclerViewAdapter adapter;
@@ -82,8 +83,8 @@ public class WalletFragment extends LoadingFragment implements View.OnClickListe
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         final View v = inflater.inflate(R.layout.fragment3_wallet, container, false);
-        web3j = Web3jFactory.build(new HttpService("https://ropsten.infura.io/wd7279F18YpzuVLkfZTk"));
-
+        //web3j = Web3jFactory.build(new HttpService("https://ropsten.infura.io/wd7279F18YpzuVLkfZTk"));
+        web3j = Web3jFactory.build(new HttpService("https://kovan.infura.io/v3/cab60b4fc0594563881813d8f5f5349b"));
         buildButtons(v);
         buildRecyclerView(v);
         coordinatorLayout = v.findViewById(R.id.coordinatorlayout);

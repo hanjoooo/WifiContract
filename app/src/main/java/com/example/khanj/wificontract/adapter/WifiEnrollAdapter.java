@@ -17,6 +17,7 @@ import java.util.ArrayList;
 
 public class WifiEnrollAdapter extends RecyclerView.Adapter<WifiEnrollAdapter.ItemViewHolder> {
 
+    private WalletRecyclerViewAdapter.OnItemClickListener mListener;
 
     public ArrayList<WifiEnrollModel> mItems;
 
@@ -31,6 +32,12 @@ public class WifiEnrollAdapter extends RecyclerView.Adapter<WifiEnrollAdapter.It
             this.view=view;
         }
     }
+    public interface OnItemClickListener{
+        void onItemClick(int position);
+    }
+    public void setOnItemClickListener(WalletRecyclerViewAdapter.OnItemClickListener listener){
+        mListener = listener;
+    }
     @Override
     public WifiEnrollAdapter.ItemViewHolder onCreateViewHolder( ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.f2_listview_custom,parent,false);
@@ -43,23 +50,20 @@ public class WifiEnrollAdapter extends RecyclerView.Adapter<WifiEnrollAdapter.It
 
         //viewHolder.tv_enrollnum.setText(wifiListModel.getEnrollNum());
         holder.tv_wifiname.setText(wifiListModel.getWifiName());
-        holder.tv_mac.setText(wifiListModel.getMac());
-        holder.tv_endtime.setText(wifiListModel.getEndTime());
+
     }
 
 
     class ItemViewHolder extends RecyclerView.ViewHolder {
         //public TextView tv_enrollnum;
         public TextView tv_wifiname;
-        public TextView tv_mac;
-        public TextView tv_endtime;
+
 
         public ItemViewHolder(View itemView) {
             super(itemView);
            // tv_enrollnum = itemView.findViewById(R.id.tv_enroll_num);
             tv_wifiname = itemView.findViewById(R.id.wifi_name);
-            tv_mac = itemView.findViewById(R.id.mac_address);
-            tv_endtime = itemView.findViewById(R.id.end_time);
+
         }
 
     }

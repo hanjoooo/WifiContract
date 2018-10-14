@@ -10,6 +10,11 @@ public class WifiListModel {
     private boolean avai;
     private String securityMode;
 
+    public WifiListModel(){
+
+    }
+
+
     public Drawable getIcon() {
         return icon;
     }

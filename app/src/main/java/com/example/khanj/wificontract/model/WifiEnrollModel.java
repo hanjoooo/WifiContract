@@ -8,17 +8,17 @@ public class WifiEnrollModel {
 
     private String mac="0";
     private String wifiname="0";
-    private String endtime="0";
     private String wifiPassword="0";
+    private int count=0;
 
     public WifiEnrollModel(){
 
     }
-    public WifiEnrollModel(String mac, String wifiname, String endtime, String wifiPassword){
+    public WifiEnrollModel(String mac, String wifiname,String wifiPassword,int count){
         this.mac = mac;
         this.wifiname = wifiname;
-        this.endtime = endtime;
         this.wifiPassword = wifiPassword;
+        this.count = count;
     }
 
     public String getMac(){
@@ -35,19 +35,17 @@ public class WifiEnrollModel {
         this.wifiname = wifiname;
     }
 
-    // 종료시간 -> 일단 String 형태로
-    public String getEndTime(){
-        return endtime;
-    }
-    public void setEndTime(String endtime){
-        this.endtime = endtime;
-    }
-
     public void setWifiPassword(String wifiPassword) {
         this.wifiPassword = wifiPassword;
     }
-
     public String getWifiPassword() {
         return wifiPassword;
+    }
+
+    public void setCount(int count) {
+        this.count = count;
+    }
+    public int getCount() {
+        return count;
     }
 }
