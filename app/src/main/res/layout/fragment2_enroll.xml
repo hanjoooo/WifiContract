@@ -36,7 +36,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="10dp"
                             android:layout_marginLeft="20dp"
-                            android:layout_marginTop="10dp"
+                            android:layout_marginTop="22dp"
                             android:text="등록된 Wifi 수"
                             android:textColor="@color/colorPrimary"
                             android:textSize="20dp" />
@@ -47,7 +47,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="10dp"
                             android:layout_marginLeft="10dp"
-                            android:layout_marginTop="10dp"
+                            android:layout_marginTop="22dp"
                             android:text="0"
                             android:textColor="@color/colorPrimary"
                             android:textSize="20dp" />

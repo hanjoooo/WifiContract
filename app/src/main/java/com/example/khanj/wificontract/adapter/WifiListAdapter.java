@@ -1,21 +1,18 @@
 package com.example.khanj.wificontract.adapter;
 
-import android.content.Context;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.khanj.wificontract.R;
 import com.example.khanj.wificontract.model.WifiListModel;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 
 
 public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ItemViewHolder> {
@@ -48,8 +45,6 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ItemVi
             viewHolder.iconImageView.setImageDrawable(wifiListModel.getIcon());
             viewHolder.titleTextView.setText(wifiListModel.getSsid());
 
-            viewHolder.titleTextView.setTextColor(Color.parseColor("#FF0000"));
-
             viewHolder.descTextView.setText(wifiListModel.getSsid());
         }else{
             viewHolder.iconImageView.setImageDrawable(wifiListModel.getIcon());
@@ -57,8 +52,11 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ItemVi
             viewHolder.descTextView.setText(wifiListModel.getSsid());
         }
 
-        if(wifiListModel.getAvai()){
-            viewHolder.titleTextView.setTextColor(Color.BLUE);
+        if(wifiListModel.getAvai()) {
+            viewHolder.titleTextView.setTextColor(Color.BLACK);
+            viewHolder.background.setBackgroundColor(Color.parseColor("#cc99ff"));
+        }else{
+            viewHolder.titleTextView.setTextColor(Color.BLACK);
         }
     }
 
@@ -66,12 +64,14 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ItemVi
         public TextView titleTextView;
         public TextView descTextView;
         public ImageView iconImageView;
+        public LinearLayout background;
 
         public ItemViewHolder(View itemView) {
             super(itemView);
             titleTextView = itemView.findViewById(R.id.ssid);
             descTextView = itemView.findViewById(R.id.price);
             iconImageView = itemView.findViewById(R.id.icon);
+            background = itemView.findViewById(R.id.itembackground);
         }
 
     }
@@ -149,11 +149,6 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ItemVi
 //        this.notifyDataSetChanged();
 //
 //    }
-
-
-
-
-
 
 
 }

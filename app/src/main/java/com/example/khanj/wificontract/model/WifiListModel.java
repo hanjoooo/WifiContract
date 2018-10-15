@@ -1,14 +1,13 @@
 package com.example.khanj.wificontract.model;
 
 import android.graphics.drawable.Drawable;
-import android.support.v4.content.ContextCompat;
 
 public class WifiListModel {
     private String ssid;
     private String bssid;
     private int rssi;
     private Drawable icon;
-    private boolean avai;
+    private boolean avai=false;
     private String securityMode;
 
     public WifiListModel(){
@@ -39,15 +38,9 @@ public class WifiListModel {
         this.ssid = ssid;
     }
 
-
-    public String getPrice() {
+    public String getBssid() {
         return bssid;
     }
-    public void setPrice(String price) {
-        this.bssid = price;
-    }
-
-
 
     public int getRssi() {
         return rssi;

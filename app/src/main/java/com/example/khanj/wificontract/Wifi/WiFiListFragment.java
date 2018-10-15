@@ -1,5 +1,6 @@
 package com.example.khanj.wificontract.Wifi;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -9,14 +10,16 @@ import android.graphics.drawable.Drawable;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
-import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -27,17 +30,35 @@ import android.widget.Toast;
 
 import com.example.khanj.wificontract.R;
 import com.example.khanj.wificontract.adapter.WifiListAdapter;
-import com.example.khanj.wificontract.model.WifiEnrollModel;
+import com.example.khanj.wificontract.loading.LoadingFragment;
+import com.example.khanj.wificontract.model.WalletModel;
 import com.example.khanj.wificontract.model.WifiListModel;
 
+import org.web3j.crypto.Credentials;
+import org.web3j.crypto.WalletUtils;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.Web3jFactory;
+import org.web3j.protocol.core.DefaultBlockParameterName;
+import org.web3j.protocol.http.HttpService;
+import org.web3j.tuples.generated.Tuple4;
+import org.web3j.tx.Contract;
+import org.web3j.tx.ManagedTransaction;
+
+import java.io.File;
+import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
+import contract.EtherWifiToken;
+import io.realm.Realm;
+import io.realm.RealmResults;
 
-public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
+
+public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLayout.OnRefreshListener {
 
     private WifiListAdapter adapter;
     private List<ScanResult> scanDatas;
@@ -48,6 +69,15 @@ public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnR
     private RecyclerView rvwifilist;
     private ArrayList<WifiListModel> mItems = new ArrayList<>();
 
+    private EtherWifiToken contract;
+    private WalletModel walletModel = new WalletModel();
+    private String contractAddress = "0x2466f0f59aa8ffb83a7425ad9d7ad02f5e27ba06";
+    private Web3j web3j;
+    private Credentials credential;
+    private Realm mRealm;
+    private String walletBalance;
+
+    private Boolean cancels=false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -55,7 +85,9 @@ public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnR
         // 우리는 wifi를 굳이 킬 필요가 있을까?
 
         View view = inflater.inflate(R.layout.fragment1_wifi_list, container, false);
-
+        web3j = Web3jFactory.build(new HttpService("https://kovan.infura.io/v3/cab60b4fc0594563881813d8f5f5349b"));
+        mRealm = Realm.getDefaultInstance();
+        getWallet();
         // adpater 추가
         adapter = new WifiListAdapter(mItems);
 
@@ -78,6 +110,7 @@ public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnR
 
         // Touch 이벤트
         // getContext()와 getActivity()의 차이
+
         final GestureDetector gestureDetector = new GestureDetector(this.getContext(), new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onSingleTapUp(MotionEvent e) {
@@ -104,7 +137,7 @@ public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnR
 
                     String ssid = item.getSsid();
 
-                    String price = item.getPrice();
+                    String price = item.getBssid();
                     Drawable icon = item.getIcon();
 
                     WifiConfiguration wfc = new WifiConfiguration();
@@ -166,12 +199,12 @@ public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnR
                         } else {
                         }
                     } else {
-                        AlertDialog.Builder ad = new AlertDialog.Builder(WifiListFragment.this.getActivity());
+                        AlertDialog.Builder ad = new AlertDialog.Builder(WiFiListFragment.this.getActivity());
 
                         ad.setTitle("비밀번호");       // 제목 설정
                         ad.setMessage("비밀번호를 입력하시오");   // 내용 설정
                         // EditText 삽입하기
-                        final EditText et = new EditText(WifiListFragment.this.getActivity());
+                        final EditText et = new EditText(WiFiListFragment.this.getActivity());
                         ad.setView(et);
 
                         // 확인 버튼 설정
@@ -232,16 +265,124 @@ public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnR
             public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
             }
         });
-
         return view;
     }
 
+    private void getWallet(){
+        mRealm.beginTransaction();
+        RealmResults<WalletModel> walletModels = mRealm.where(WalletModel.class).findAll();
+        mRealm.commitTransaction();
+        if (walletModels.size()>0){
+            walletModel = walletModels.get(0);
+            readyForRequest(walletModel.getPassword(), walletModel.getDetailPath());
+            getWalletBallance(walletModel.getWalletAddress());
+        }
+    }
+    public void compareWifiContract(String macAddress,int index){
+        new AsyncTask()
+        {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                try {
+                    if(cancels)
+                        cancel(true);
+                    contract = EtherWifiToken.load(contractAddress,web3j,credential, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
+                    Tuple4<String,String,BigInteger,Boolean> contractWifiInfo = contract.getAccessPoint(macAddress).send();
+                    Log.d("TAG",contract.getAccessPoint(macAddress).send().getValue4().toString());
+                    if(contractWifiInfo.getValue4()){
+                        Log.d("TAG",contract.getAccessPoint(macAddress).send().getValue4().toString());
+                        mItems.get(index).setAvai(true);
+                        progressOFF();
 
+                    }
+
+
+                    //Log.d("TAG","잘했어요");
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+                return  false;
+            }
+
+            @Override
+            protected void onPostExecute(Object o) {
+                super.onPostExecute(o);
+                adapter.notifyDataSetChanged();
+
+            }
+
+            @Override
+            protected void onCancelled() {
+                super.onCancelled();
+                return ;
+            }
+        }
+                .execute();
+    }
+    public void getWifiContract(String macAddress){
+        new AsyncTask()
+        {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                try {
+                    contract = EtherWifiToken.load(contractAddress,web3j,credential, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
+
+                    Log.d("TAG","잘했어요");
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+                return false;
+            }
+        }
+                .execute();
+    }
+    @SuppressLint("StaticFieldLeak")
+    private void readyForRequest(String pwd, String detailpath){
+        //start sending request
+        new AsyncTask(){
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                try {
+                    File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                    credential = WalletUtils.loadCredentials(pwd, path+"/"+detailpath);
+                    contract = EtherWifiToken.load(contractAddress, web3j, credential, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
+                    Log.d("TAG","done credential");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Log.d("TAG","failed !!!");
+                }
+                return null;
+            }
+        }.execute();
+    }
+    @SuppressLint("StaticFieldLeak")
+    private void getWalletBallance(String walletAddress) {
+        //GetMyBalance
+        new AsyncTask () {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                BigInteger ethGetBalance = null;
+                try {
+                    ethGetBalance = web3j
+                            .ethGetBalance(walletAddress, DefaultBlockParameterName.LATEST)
+                            .send()
+                            .getBalance();
+                    BigInteger wei = ethGetBalance;
+                    walletBalance = wei.toString();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Log.d("TAG","failed !!! generate Wallet");
+                }
+                return null;
+            }
+        }.execute();
+    }
     private BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
-
+            mItems.clear();
+            startProgresss();
             if (action.equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
                 scanDatas = wifiManager.getScanResults();
 
@@ -265,9 +406,12 @@ public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnR
                     }
                 }
 
-            } else if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
+            }
+
+            else if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
                 getActivity().sendBroadcast(new Intent("wifi.ON_NETWORK_STATE_CHANGED"));
             }
+
         }
     };
 
@@ -291,15 +435,20 @@ public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnR
             Drawable ICON = null;
             if (RSSI >= -60) {
                 ICON = ContextCompat.getDrawable(getActivity(), R.drawable.wifi_strength_3);
-                aval= true;
             } else if (-75 <= RSSI && RSSI < -60) {
                 ICON = ContextCompat.getDrawable(getActivity(), R.drawable.wifi_strength_2);
-            } else if (-85 <= RSSI && RSSI < -75) {
+            }
+            /*else if (-85 <= RSSI && RSSI < -75) {
                 ICON = ContextCompat.getDrawable(getActivity(), R.drawable.wifi_strength_1);
             }
+            */
             if(ICON!=null) {
                 mItems.add(new WifiListModel(SSID, BSSID, RSSI, ICON, aval, SecurtyMode));
-                itemSort();
+                //itemSort();
+                //adapter.notifyDataSetChanged();
+                for(int i=0;i<mItems.size(); i++){
+                    compareWifiContract(mItems.get(i).getBssid(),i);
+                }
                 adapter.notifyDataSetChanged();
             }
         }
@@ -336,12 +485,15 @@ public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnR
     public void onResume() {
         super.onResume();
         wifiScan();
+        cancels=false;
     }
 
     @Override
     public void onPause() {
         super.onPause();
         getContext().unregisterReceiver(receiver);
+        cancels=true;
+
     }
 
 
@@ -357,8 +509,14 @@ public class WifiListFragment extends Fragment implements SwipeRefreshLayout.OnR
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
+                adapter.notifyDataSetChanged();
+                progressOFF();
             }
-        }, 4000);
+        }, 2000);
+    }
+
+    public void startProgresss(){
+        progressON(this.getActivity(),"와이파이 찾는중...");
     }
 
 

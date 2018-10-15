@@ -83,6 +83,7 @@ public class WifiEnrollFragment extends LoadingFragment {
     private WalletModel walletModel = new WalletModel();
     private String walletBalance;
 
+    WifiEnrollModel wifiEnrollModel;
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
@@ -221,7 +222,7 @@ public class WifiEnrollFragment extends LoadingFragment {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             startProgresss();
-                            WifiEnrollModel wifiEnrollModel = new WifiEnrollModel("213:2323:3232","한주와이파이",etpassword.getText().toString(),0);
+                            wifiEnrollModel.setWifiPassword(etpassword.getText().toString());
                             registWifi(wifiEnrollModel);
                         }
                     })
@@ -234,9 +235,12 @@ public class WifiEnrollFragment extends LoadingFragment {
         }
     };
 
+
+
     public void setWiFiStatus(Context mContext, TextView etmac, TextView etwifiname) {
         WifiManager manager = (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
         WifiInfo wifiInfo = manager.getConnectionInfo();
+        wifiEnrollModel = new WifiEnrollModel(wifiInfo.getBSSID(),wifiInfo.getSSID(),"",0);
         etwifiname.setText(wifiInfo.getSSID().replace('\"', '\0'));
         etmac.setText(wifiInfo.getBSSID());
     }
@@ -246,9 +250,9 @@ public class WifiEnrollFragment extends LoadingFragment {
             protected Object doInBackground(Object[] objects) {
                 try {
                     contract = EtherWifiToken.load(contractAddress,web3j,credential,ManagedTransaction.GAS_PRICE,Contract.GAS_LIMIT);
+                    Log.d("TAG",wifiEnrollModel.getMac());
                     TransactionReceipt tr = contract.addAccessPoint(wifiEnrollModel.getMac(),wifiEnrollModel.getWifiName(),wifiEnrollModel.getWifiPassword()).send();
                     progressOFF();
-                    Log.d("TAG","잘했어요");
                 }catch (Exception e){
                     e.printStackTrace();
                 }
