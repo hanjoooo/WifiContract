@@ -1,19 +1,27 @@
 package com.example.khanj.wificontract.model;
 
 import android.graphics.drawable.Drawable;
+import android.support.v4.content.ContextCompat;
 
 public class WifiListModel {
-    private Drawable icon;
     private String ssid;
-    private String price;
+    private String bssid;
     private int rssi;
+    private Drawable icon;
     private boolean avai;
     private String securityMode;
 
     public WifiListModel(){
 
     }
-
+    public WifiListModel(String ssid, String bssid,int rssi, Drawable icon, boolean avai, String securityMode){
+        this.ssid = ssid;
+        this.bssid = bssid;
+        this.rssi = rssi;
+        this.icon = icon;
+        this.avai = avai;
+        this.securityMode = securityMode;
+    }
 
     public Drawable getIcon() {
         return icon;
@@ -33,10 +41,10 @@ public class WifiListModel {
 
 
     public String getPrice() {
-        return price;
+        return bssid;
     }
     public void setPrice(String price) {
-        this.price = price;
+        this.bssid = price;
     }
 
 
@@ -55,11 +63,23 @@ public class WifiListModel {
     }
     public void setAvai(boolean avai){this.avai = avai;}
 
+
     public void setSecurityMode(String securityMode) {
         this.securityMode = securityMode;
     }
-
     public String getSecurityMode() {
         return securityMode;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
