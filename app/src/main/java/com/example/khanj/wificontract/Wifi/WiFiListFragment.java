@@ -49,8 +49,6 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -318,6 +316,9 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
                     }
                 }
                 adapter.notifyDataSetChanged();
+                for (int i = 0; i < mItems.size(); ++i) {
+                    getAvailabilityFromContract(mItems.get(i).getBssid(), i);
+                }
             } else if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
                 getActivity().sendBroadcast(new Intent("wifi.ON_NETWORK_STATE_CHANGED"));
             }
@@ -340,7 +341,7 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
         }
         if (ICON != null) {
             mItems.add(new WifiListModel(SSID, BSSID, RSSI, ICON, false, securityMode));
-            getAvailabilityFromContract(mItems.get(position).getBssid(), position);
+            // getAvailabilityFromContract(mItems.get(position).getBssid(), position);
         }
     }
 

@@ -40,6 +40,8 @@ public class WifiListAdapter extends RecyclerView.Adapter<WifiListAdapter.ItemVi
 
         if (wifiListModel.getAvai()) {
             viewHolder.background.setBackgroundColor(Color.parseColor("#cc99ff"));
+        }else{
+            viewHolder.background.setBackgroundColor(Color.parseColor("#ffffff"));
         }
     }
 
