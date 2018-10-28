@@ -10,6 +10,9 @@ public class WifiListModel {
     private boolean avai=false;
     private String securityMode;
 
+
+    private String password;
+
     public WifiListModel(){
 
     }
@@ -20,6 +23,15 @@ public class WifiListModel {
         this.icon = icon;
         this.avai = avai;
         this.securityMode = securityMode;
+        this.password = "";
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public Drawable getIcon() {

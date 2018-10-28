@@ -118,12 +118,12 @@ public class WalletFragment extends LoadingFragment implements View.OnClickListe
             @Override
             public void onItemClick(int position) {
                 WalletViewHolerModel model =  modelList.get(position);
-                setSeletWalletAdapter(model);
+                setSelectWalletAdapter(model);
             }
         });
     }
 
-    private void setSeletWalletAdapter(WalletViewHolerModel model){
+    private void setSelectWalletAdapter(WalletViewHolerModel model){
         AlertDialog.Builder alertBuilder =new AlertDialog.Builder(getActivity());
         alertBuilder.setTitle("보내실 지갑을 선택하십시오.");
         int index =0;

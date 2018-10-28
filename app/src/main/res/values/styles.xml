@@ -32,4 +32,10 @@
         <item name="android:textColor">@color/hint</item>
         <item name="android:fontFamily">@font/notosanskr_regular</item>
     </style>
+
+    <style name="SplashTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
 </resources>

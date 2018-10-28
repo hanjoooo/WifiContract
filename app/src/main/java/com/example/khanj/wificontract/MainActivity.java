@@ -9,6 +9,7 @@ import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.MenuItem;
 import android.widget.TextView;
 
@@ -20,24 +21,10 @@ import com.example.khanj.wificontract.wallet.BusProvider;
 import com.example.khanj.wificontract.wallet.WalletFragment;
 
 import io.realm.Realm;
+import io.realm.RealmConfiguration;
 
 
 public class MainActivity extends AppCompatActivity {
-
-
-    public static final String METHOD_TYPE = "GET";
-    public static final int CONNECTION_TIMEOUT = 3000;
-    public static final int DATARETRIEVAL_TIMEOUT = 3000;
-    public static final int LOAD_SUCCESS = 101;
-
-    // private String PORT = "80";
-    private String SEARCH_URL = "http://creativeseed.iptime.org/";
-    private String REQUEST_MAC_ADDRESS = "64E599CAB846";
-    // private String SEARCH_URL = "http://www.google.com";
-
-    private String getWifiSearchURL(String macAddress) {
-        return SEARCH_URL + "getWiFiInfo?macAddress=" + macAddress;
-    }
     private MenuItem preitem;
     private TextView txt_title;
     private BackPressHandler backPressHandler;
@@ -46,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            if (item==preitem) return false;
+            if (item == preitem) return false;
             switch (item.getItemId()) {
                 case R.id.nav_home:
                     replaceViewPager(new WiFiListFragment());
@@ -75,12 +62,24 @@ public class MainActivity extends AppCompatActivity {
 
         txt_title = findViewById(R.id.txt_main_title);
         ActivityCompat.requestPermissions(this, new String[]{
-                Manifest.permission.ACCESS_FINE_LOCATION }, 1);
+                Manifest.permission.ACCESS_FINE_LOCATION}, 1);
 
         Realm.init(this);
+        /*
+        Realm.getInstance(new RealmConfiguration.Builder()
+                .schemaVersion(1)
+                .migration(new Migration())
+                .build()
+        );
+        */
+        RealmConfiguration config = new RealmConfiguration.Builder()
+                .deleteRealmIfMigrationNeeded()
+                .build();
+        Realm.setDefaultConfiguration(config);
+
+
         replaceViewPager(new WiFiListFragment());
         txt_title.setText("WIFI");
-
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         backPressHandler = new BackPressHandler(this);
@@ -100,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onBackPressed(){
+    public void onBackPressed() {
         backPressHandler.onBackPressed();
     }
 }

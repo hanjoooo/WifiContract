@@ -30,6 +30,7 @@ import com.example.khanj.wificontract.R;
 import com.example.khanj.wificontract.adapter.WifiEnrollAdapter;
 import com.example.khanj.wificontract.loading.LoadingFragment;
 import com.example.khanj.wificontract.model.WalletModel;
+import com.example.khanj.wificontract.model.WifiAssetModel;
 import com.example.khanj.wificontract.model.WifiEnrollModel;
 
 import org.web3j.crypto.Credentials;
@@ -69,7 +70,7 @@ public class WifiEnrollFragment extends LoadingFragment {
 
     // wifi 등록 수,이름, 맥주소, 시간, 비밀번호
     private TextView tv_wifienrollnum;
-    private ArrayList<WifiEnrollModel> mItems =new ArrayList<>();
+    private ArrayList<WifiEnrollModel> mItems = new ArrayList<>();
     private TextView txWifinum;
     //블록체인에서 가져올 값들
 
@@ -77,13 +78,14 @@ public class WifiEnrollFragment extends LoadingFragment {
 
     private Web3j web3j;
     private Credentials credential;
-    private String contractAddress = "0x2466f0f59aa8ffb83a7425ad9d7ad02f5e27ba06";
-    private String KEY = "19930113";
+    private String contractAddress = "0x49d4dd5d50b0f6bfd5f08fbc4734023d02feda44";
+    private final String KEY = "201110911220131220652012122335";
     private EtherWifiToken contract;
     private WalletModel walletModel = new WalletModel();
     private String walletBalance;
 
     WifiEnrollModel wifiEnrollModel;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
@@ -93,13 +95,12 @@ public class WifiEnrollFragment extends LoadingFragment {
 
         mRealm = Realm.getDefaultInstance();
         getWallet();
-
+        // getWifiAssetObject();
         FloatingActionButton fab = v.findViewById(R.id.fab);
         fab.setOnClickListener(clickFab);
 
         noListData = v.findViewById(R.id.no_listdata);
-        txWifinum = (TextView)v.findViewById(R.id.txwifinum);
-
+        txWifinum = (TextView) v.findViewById(R.id.txwifinum);
         //        pullToRefresh = v.findViewById(R.id.pullToRefresh);
         //        pullToRefresh.setOnRefreshListener(this);
         adapter = new WifiEnrollAdapter(mItems);
@@ -110,15 +111,29 @@ public class WifiEnrollFragment extends LoadingFragment {
 
         mItems.clear();
         noListData.setVisibility(View.GONE);
-        txWifinum.setText(""+mItems.size());
+        txWifinum.setText("" + mItems.size());
         return v;
     }
 
-    private void getWallet(){
+    /*
+    private void getWifiAssetObject() {
+        mRealm.beginTransaction();
+        RealmResults<WifiAssetModel> wifiAssetModel = mRealm.where(WifiAssetModel.class).findAll();
+        mRealm.commitTransaction();
+        for (int i = 0; i < wifiAssetModel.size(); i++) {
+            mItems.add(new WifiEnrollModel(wifiAssetModel.get(i).getMacAddress(), wifiAssetModel.get(i).getSsid(), "", 0));
+            Log.d("TAG", String.valueOf(mItems.get(i)));
+        }
+        if (wifiAssetModel.size() > 0)
+            adapter.notifyDataSetChanged();
+    }
+    */
+
+    private void getWallet() {
         mRealm.beginTransaction();
         RealmResults<WalletModel> walletModels = mRealm.where(WalletModel.class).findAll();
         mRealm.commitTransaction();
-        if (walletModels.size()>0){
+        if (walletModels.size() > 0) {
             walletModel = walletModels.get(0);
             readyForRequest(walletModel.getPassword(), walletModel.getDetailPath());
             getWalletBallance(walletModel.getWalletAddress());
@@ -126,19 +141,19 @@ public class WifiEnrollFragment extends LoadingFragment {
     }
 
     @SuppressLint("StaticFieldLeak")
-    private void readyForRequest(String pwd, String detailpath){
+    private void readyForRequest(String pwd, String detailpath) {
         //start sending request
-        new AsyncTask(){
+        new AsyncTask() {
             @Override
             protected Object doInBackground(Object[] objects) {
                 try {
                     File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                    credential = WalletUtils.loadCredentials(pwd, path+"/"+detailpath);
+                    credential = WalletUtils.loadCredentials(pwd, path + "/" + detailpath);
                     contract = EtherWifiToken.load(contractAddress, web3j, credential, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
-                    Log.d("TAG","done credential");
+                    Log.d("TAG", "done credential");
                 } catch (Exception e) {
                     e.printStackTrace();
-                    Log.d("TAG","failed !!!");
+                    Log.d("TAG", "failed !!!");
                 }
                 return null;
             }
@@ -148,7 +163,7 @@ public class WifiEnrollFragment extends LoadingFragment {
     @SuppressLint("StaticFieldLeak")
     private void getWalletBallance(String walletAddress) {
         //GetMyBalance
-        new AsyncTask () {
+        new AsyncTask() {
             @Override
             protected Object doInBackground(Object[] objects) {
                 BigInteger ethGetBalance = null;
@@ -161,31 +176,28 @@ public class WifiEnrollFragment extends LoadingFragment {
                     walletBalance = wei.toString();
                 } catch (IOException e) {
                     e.printStackTrace();
-                    Log.d("TAG","failed !!! generate Wallet");
+                    Log.d("TAG", "failed !!! generate Wallet");
                 }
                 return null;
             }
         }.execute();
     }
 
-
     private static String encrypt(String text, String key) throws Exception {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        byte[] keyBytes= new byte[16];
-        byte[] b= key.getBytes("UTF-8");
-        int len= b.length;
+        byte[] keyBytes = new byte[16];
+        byte[] b = key.getBytes("UTF-8");
+        int len = b.length;
         if (len > keyBytes.length) len = keyBytes.length;
         System.arraycopy(b, 0, keyBytes, 0, len);
         SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
         IvParameterSpec ivSpec = new IvParameterSpec(keyBytes);
-        cipher.init(Cipher.ENCRYPT_MODE,keySpec,ivSpec);
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
         byte[] results = cipher.doFinal(text.getBytes("UTF-8"));
         return Base64.encodeToString(results, 0);
     }
 
-
     private void buildRecyclerView(View v) {
-
         tv_wifienrollnum = v.findViewById(R.id.tv_enroll_num);
         rv_rollWifiList = v.findViewById(R.id.rv_enroll_list);
         rv_rollWifiList.setLayoutManager(new LinearLayoutManager(getActivity()));
@@ -193,27 +205,25 @@ public class WifiEnrollFragment extends LoadingFragment {
         rv_rollWifiList.setItemAnimator(new DefaultItemAnimator());
         rv_rollWifiList.setNestedScrollingEnabled(false);
         rv_rollWifiList.setAdapter(adapter);
-
         tempSetting();
         setAddItem(v);
-
     }
 
-    private void tempSetting(){
-
+    private void tempSetting() {
     }
+
     private void setAddItem(View v) {
-
     }
+
     //플로팅버튼 클릭 함수
     private View.OnClickListener clickFab = new View.OnClickListener() {
         public void onClick(View v) {
-            final LinearLayout linear = (LinearLayout)View.inflate(getActivity(),R.layout.custom_dialog,null);
+            final LinearLayout linear = (LinearLayout) View.inflate(getActivity(), R.layout.custom_dialog, null);
             TextView etwifiname = (TextView) linear.findViewById(R.id.wifi_name);
-            TextView etmac = (TextView)linear.findViewById(R.id.mac_address);
-            EditText etpassword = (EditText)linear.findViewById(R.id.wifi_password);
+            TextView etmac = (TextView) linear.findViewById(R.id.mac_address);
+            EditText etpassword = (EditText) linear.findViewById(R.id.wifi_password);
 
-            setWiFiStatus(getActivity(),etmac,etwifiname);
+            setWiFiStatus(getActivity(), etmac, etwifiname);
             new AlertDialog.Builder(getActivity())
                     .setTitle("와이파이등록")
                     .setIcon(R.drawable.wifi)
@@ -222,8 +232,14 @@ public class WifiEnrollFragment extends LoadingFragment {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             startProgresss();
-                            wifiEnrollModel.setWifiPassword(etpassword.getText().toString());
-                            registWifi(wifiEnrollModel);
+                            try {
+                                String password = encrypt(etpassword.getText().toString(), KEY);
+                                wifiEnrollModel.setWifiPassword(password);
+                                registWifi(wifiEnrollModel);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            // createWifiAssetObject(wifiEnrollModel.getMac(), wifiEnrollModel.getWifiName(), credential.getAddress());
                         }
                     })
                     .setNegativeButton("취소", new DialogInterface.OnClickListener() {
@@ -235,33 +251,51 @@ public class WifiEnrollFragment extends LoadingFragment {
         }
     };
 
-
+    /*
+    private void createWifiAssetObject(String macAddress, String ssid, String owner) {
+        mRealm.beginTransaction();
+        RealmResults<WifiAssetModel> wifiAssetModels = mRealm.where(WifiAssetModel.class).findAll();
+        WifiAssetModel wifiAssetModel;
+        try {
+            wifiAssetModel = mRealm.createObject(WifiAssetModel.class, macAddress);
+            wifiAssetModel.setSsid(ssid);
+            wifiAssetModel.setOwner(owner);
+            Log.d("Wifi Asset Registration", wifiAssetModel.toString());
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "the Name already exist", Toast.LENGTH_SHORT).show();
+        }
+        mRealm.commitTransaction();
+    }
+    */
 
     public void setWiFiStatus(Context mContext, TextView etmac, TextView etwifiname) {
-        WifiManager manager = (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
+        WifiManager manager = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
         WifiInfo wifiInfo = manager.getConnectionInfo();
-        wifiEnrollModel = new WifiEnrollModel(wifiInfo.getBSSID(),wifiInfo.getSSID(),"",0);
+        wifiEnrollModel = new WifiEnrollModel(wifiInfo.getBSSID(), wifiInfo.getSSID(), "", 0);
         etwifiname.setText(wifiInfo.getSSID().replace('\"', '\0'));
         etmac.setText(wifiInfo.getBSSID());
     }
-    private void registWifi(WifiEnrollModel wifiEnrollModel){
-        new AsyncTask(){
+
+    private void registWifi(WifiEnrollModel wifiEnrollModel) {
+        new AsyncTask() {
             @Override
             protected Object doInBackground(Object[] objects) {
                 try {
-                    contract = EtherWifiToken.load(contractAddress,web3j,credential,ManagedTransaction.GAS_PRICE,Contract.GAS_LIMIT);
-                    Log.d("TAG",wifiEnrollModel.getMac());
-                    TransactionReceipt tr = contract.addAccessPoint(wifiEnrollModel.getMac(),wifiEnrollModel.getWifiName(),wifiEnrollModel.getWifiPassword()).send();
+                    contract = EtherWifiToken.load(contractAddress, web3j, credential, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
+                    Log.d("TAG", wifiEnrollModel.getMac());
+                    TransactionReceipt tr = contract.addAccessPoint(wifiEnrollModel.getMac(), wifiEnrollModel.getWifiName(), wifiEnrollModel.getWifiPassword()).send();
                     progressOFF();
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
                 return null;
             }
         }.execute();
     }
-    public void startProgresss(){
-        progressON(this.getActivity(),"올리는중...");
+
+
+    public void startProgresss() {
+        progressON(this.getActivity(), "올리는중...");
     }
 //    @Override
 //    public void onRefresh(){
