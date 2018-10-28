@@ -40,6 +40,7 @@ import org.web3j.protocol.Web3jFactory;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
+import org.web3j.tuples.generated.Tuple4;
 import org.web3j.tx.Contract;
 import org.web3j.tx.ManagedTransaction;
 
@@ -95,7 +96,6 @@ public class WifiEnrollFragment extends LoadingFragment {
 
         mRealm = Realm.getDefaultInstance();
         getWallet();
-        // getWifiAssetObject();
         FloatingActionButton fab = v.findViewById(R.id.fab);
         fab.setOnClickListener(clickFab);
 
@@ -108,26 +108,28 @@ public class WifiEnrollFragment extends LoadingFragment {
         rv_rollWifiList.setAdapter(adapter);
         rv_rollWifiList.setLayoutManager(new LinearLayoutManager(this.getActivity()));
 
-
         mItems.clear();
+        getWifiAssetObject();
+        getWifiInfoFromContract();
         noListData.setVisibility(View.GONE);
         txWifinum.setText("" + mItems.size());
         return v;
     }
 
-    /*
     private void getWifiAssetObject() {
         mRealm.beginTransaction();
         RealmResults<WifiAssetModel> wifiAssetModel = mRealm.where(WifiAssetModel.class).findAll();
         mRealm.commitTransaction();
+        Log.d("getWifi", Integer.toString(wifiAssetModel.size()));
         for (int i = 0; i < wifiAssetModel.size(); i++) {
-            mItems.add(new WifiEnrollModel(wifiAssetModel.get(i).getMacAddress(), wifiAssetModel.get(i).getSsid(), "", 0));
+            Log.d("getWifi",wifiAssetModel.get(i).getMacAddress() + wifiAssetModel.get(i).getSsid());
+            mItems.add(new WifiEnrollModel(wifiAssetModel.get(i).getMacAddress(), wifiAssetModel.get(i).getSsid(), "1", 0));
             Log.d("TAG", String.valueOf(mItems.get(i)));
         }
-        if (wifiAssetModel.size() > 0)
+        if (wifiAssetModel.size() > 0) {
             adapter.notifyDataSetChanged();
+        }
     }
-    */
 
     private void getWallet() {
         mRealm.beginTransaction();
@@ -236,10 +238,11 @@ public class WifiEnrollFragment extends LoadingFragment {
                                 String password = encrypt(etpassword.getText().toString(), KEY);
                                 wifiEnrollModel.setWifiPassword(password);
                                 registWifi(wifiEnrollModel);
+                                createWifiAssetObject(wifiEnrollModel.getMac(), wifiEnrollModel.getWifiName(), credential.getAddress());
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                            // createWifiAssetObject(wifiEnrollModel.getMac(), wifiEnrollModel.getWifiName(), credential.getAddress());
+
                         }
                     })
                     .setNegativeButton("취소", new DialogInterface.OnClickListener() {
@@ -251,14 +254,13 @@ public class WifiEnrollFragment extends LoadingFragment {
         }
     };
 
-    /*
     private void createWifiAssetObject(String macAddress, String ssid, String owner) {
         mRealm.beginTransaction();
-        RealmResults<WifiAssetModel> wifiAssetModels = mRealm.where(WifiAssetModel.class).findAll();
+        // RealmResults<WifiAssetModel> wifiAssetModels = mRealm.where(WifiAssetModel.class).findAll();
         WifiAssetModel wifiAssetModel;
         try {
             wifiAssetModel = mRealm.createObject(WifiAssetModel.class, macAddress);
-            wifiAssetModel.setSsid(ssid);
+            wifiAssetModel.setSsid(ssid.substring(1, ssid.length() - 1));
             wifiAssetModel.setOwner(owner);
             Log.d("Wifi Asset Registration", wifiAssetModel.toString());
         } catch (Exception e) {
@@ -266,7 +268,6 @@ public class WifiEnrollFragment extends LoadingFragment {
         }
         mRealm.commitTransaction();
     }
-    */
 
     public void setWiFiStatus(Context mContext, TextView etmac, TextView etwifiname) {
         WifiManager manager = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
@@ -293,6 +294,61 @@ public class WifiEnrollFragment extends LoadingFragment {
         }.execute();
     }
 
+    public void getWifiInfoFromContract() {
+        for (int i = 0; i < mItems.size(); ++i) {
+            getAvailabilityFromContract(mItems.get(i).getMac(), i);
+        }
+    }
+
+    public void getAvailabilityFromContract(String macAddress, int position) {
+        new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                try {
+                    // @notice contractWifiInfo : <1: 비밀번호, 2: 공유자 지갑 주소, 3: 사용 시간, 4: 활성여부>
+                    contract = EtherWifiToken.load(contractAddress, web3j, credential, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
+                    Tuple4<String, String, BigInteger, Boolean> contractWifiInfo = contract.getAccessPoint(macAddress).send();
+                    Log.d("TAG", macAddress + "\t" + contractWifiInfo.getValue4().toString() + "\t" + position + "\t" + mItems.get(position).getWifiName());
+                    Boolean isEnable = contractWifiInfo.getValue4();
+                    if (isEnable) {
+                        String password = decrypt(contractWifiInfo.getValue1(), KEY);
+                        mItems.get(position).setWifiPassword(password);
+                        mItems.get(position).setEnable(isEnable);
+                        adapter.notifyItemChanged(position);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return false;
+            }
+
+            @Override
+            protected void onPostExecute(Object o) {
+                super.onPostExecute(o);
+                // if (index == mItems.size() - 1) adapter.notifyDataSetChanged();
+            }
+
+            @Override
+            protected void onCancelled() {
+                super.onCancelled();
+                return;
+            }
+        }.execute();
+    }
+
+    private static String decrypt(String text, String key) throws Exception {
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        byte[] keyBytes = new byte[16];
+        byte[] b = key.getBytes("UTF-8");
+        int len = b.length;
+        if (len > keyBytes.length) len = keyBytes.length;
+        System.arraycopy(b, 0, keyBytes, 0, len);
+        SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
+        IvParameterSpec ivSpec = new IvParameterSpec(keyBytes);
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
+        byte[] results = cipher.doFinal(Base64.decode(text, 0));
+        return new String(results, "UTF-8");
+    }
 
     public void startProgresss() {
         progressON(this.getActivity(), "올리는중...");
