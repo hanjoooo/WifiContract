@@ -367,6 +367,4 @@ public class WifiEnrollFragment extends LoadingFragment {
 //        }, 500);
 //        pullToRefresh.setRefreshing(false);
 //    }
-
-
 }
