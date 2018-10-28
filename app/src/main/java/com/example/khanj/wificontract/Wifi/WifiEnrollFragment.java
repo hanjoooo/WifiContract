@@ -294,6 +294,44 @@ public class WifiEnrollFragment extends LoadingFragment {
         }.execute();
     }
 
+    /**
+     * @notice  와이파이 공유상태 활성 및 비활성
+     * function setStatus(string _macAddress, bool _switch) public accessPointOwner(_macAddress)
+     */
+    private void setWifiStatus(String macAddress, Boolean status) {
+        new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                try {
+                    contract = EtherWifiToken.load(contractAddress, web3j, credential, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
+                    TransactionReceipt tr = contract.setStatus(macAddress, status).send();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        }.execute();
+    }
+
+    /**
+     * @notice  와이파이 비밀번호 재설정
+     * function setPassword(string _macAddress, string _password) public accessPointOwner(_macAddress)
+     */
+    private void setWifiPassword(String macAddress, String password) {
+        new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                try {
+                    contract = EtherWifiToken.load(contractAddress, web3j, credential, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
+                    TransactionReceipt tr = contract.setPassword(macAddress, password).send();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        }.execute();
+    }
+
     public void getWifiInfoFromContract() {
         for (int i = 0; i < mItems.size(); ++i) {
             getAvailabilityFromContract(mItems.get(i).getMac(), i);
