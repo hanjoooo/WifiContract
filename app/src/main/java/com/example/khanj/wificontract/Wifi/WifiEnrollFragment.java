@@ -264,29 +264,54 @@ public class WifiEnrollFragment extends LoadingFragment {
                 WifiEnrollModel wifiModifyModel = mItems.get(currentPosition);
 
                 //해당 위치의 Data를 가져옴
-                String originPassword = wifiModifyModel.getWifiPassword();
                 modwifiname.setText( wifiModifyModel.getWifiName());
                 modmac.setText( wifiModifyModel.getMac());
                 modswitch.setChecked(wifiModifyModel.getEnable());
 
-                //임시로 해놓는것
-                modpassword.setText(wifiModifyModel.getWifiPassword());
+
+                String originPassword = wifiModifyModel.getWifiPassword();//복호화된 비밀번호
+                Boolean statusflag = wifiModifyModel.getEnable();
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
                 builder.setTitle("와이파이수정");
                 builder.setIcon(R.drawable.wifi);
                 builder.setView(linear);
+
+                // 스위치 체크
                 switchChecked(modswitch, wifiModifyModel);
+
+
+                /**
+                 * 임시
+                 */
+                modpassword.setText(wifiModifyModel.getWifiPassword());
+                String tm = modpassword.getText().toString();
+                Log.d("ttttt", originPassword);
+                Log.d("ttttt", tm);
 
                 builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 modifyProgresss(); //로딩
                                 try {
-                                    if(originPassword != modpassword.getText().toString()){
+                                    // 비밀번호 수정
+                                    if( modpassword.getText().toString()!=null && !originPassword.equals(modpassword.getText().toString()) ){
+                                        wifiModifyModel.setWifiPassword(modpassword.getText().toString());
                                         String newpassword = encrypt(modpassword.getText().toString(), KEY);
-                                        wifiModifyModel.setWifiPassword(newpassword);
-                                        setWifiPassword(wifiModifyModel.getMac(),wifiModifyModel.getWifiPassword());
+                                        setWifiPassword(wifiModifyModel.getMac(), newpassword);
+                                        Toast.makeText(getContext(), "와이파이 비밀번호 수정.", Toast.LENGTH_SHORT).show();
+                                    }
+                                    // 상태 수정
+                                    // flag와 다를 때만 바꿔준다.
+                                    if(statusflag != modswitch.getShowText()){
+                                        wifiModifyModel.setEnable(modswitch.getShowText());
+                                        setWifiStatus( wifiModifyModel.getMac(), wifiModifyModel.getEnable() );
+
+                                        if(wifiModifyModel.getEnable()){
+                                            Toast.makeText(getContext(), "와이파이 활성", Toast.LENGTH_SHORT).show();
+                                        }else{
+                                            Toast.makeText(getContext(), "와이파이 비활성", Toast.LENGTH_SHORT).show();
+                                        }
                                     }
                                 } catch (Exception e) {
                                     e.printStackTrace();
@@ -323,13 +348,8 @@ public class WifiEnrollFragment extends LoadingFragment {
                 // TODO Auto-generated method stub
                 if(isChecked){
                     sw.setChecked(true);
-                    wifiModifyModel.setEnable(true);
-                    setWifiStatus(wifiModifyModel.getMac(), true);
                 }else{
                     sw.setChecked(false);
-                    wifiModifyModel.setEnable(false);
-                    setWifiStatus(wifiModifyModel.getMac(), false);
-
                 }
             }
         });
