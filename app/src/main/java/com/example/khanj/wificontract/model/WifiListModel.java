@@ -10,7 +10,6 @@ public class WifiListModel {
     private boolean avai=false;
     private String securityMode;
 
-
     private String password;
 
     public WifiListModel(){

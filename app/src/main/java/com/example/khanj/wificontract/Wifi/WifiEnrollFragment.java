@@ -18,16 +18,23 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Base64;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.RadioGroup;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import com.example.khanj.wificontract.R;
 import com.example.khanj.wificontract.adapter.WifiEnrollAdapter;
+import com.example.khanj.wificontract.adapter.WifiListAdapter;
 import com.example.khanj.wificontract.loading.LoadingFragment;
 import com.example.khanj.wificontract.model.WalletModel;
 import com.example.khanj.wificontract.model.WifiAssetModel;
@@ -62,6 +69,7 @@ import io.realm.RealmResults;
  * A simple {@link Fragment} subclass.
  */
 public class WifiEnrollFragment extends LoadingFragment {
+
     private LinearLayout noListData;
     private SwipeRefreshLayout pullToRefresh;
     private WifiEnrollAdapter adapter;
@@ -84,8 +92,10 @@ public class WifiEnrollFragment extends LoadingFragment {
     private EtherWifiToken contract;
     private WalletModel walletModel = new WalletModel();
     private String walletBalance;
+    private GestureDetector gestureDetector;
 
     WifiEnrollModel wifiEnrollModel;
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -107,13 +117,25 @@ public class WifiEnrollFragment extends LoadingFragment {
         rv_rollWifiList = (RecyclerView) v.findViewById(R.id.rv_enroll_list);
         rv_rollWifiList.setAdapter(adapter);
         rv_rollWifiList.setLayoutManager(new LinearLayoutManager(this.getActivity()));
+        rv_rollWifiList.addOnItemTouchListener(onItemTouchListener);
+
+        gestureDetector = new GestureDetector(v.getContext(),new GestureDetector.SimpleOnGestureListener() {
+
+            //누르고 뗄 때 한번만 인식하도록 하기위해서
+            @Override
+            public boolean onSingleTapUp(MotionEvent e) {
+                return true;
+            }
+        });
 
         mItems.clear();
         getWifiAssetObject();
         getWifiInfoFromContract();
+
         noListData.setVisibility(View.GONE);
         txWifinum.setText("" + mItems.size());
         return v;
+
     }
 
     private void getWifiAssetObject() {
@@ -217,82 +239,102 @@ public class WifiEnrollFragment extends LoadingFragment {
     private void setAddItem(View v) {
     }
 
-    //플로팅버튼 클릭 함수
-    private View.OnClickListener clickFab = new View.OnClickListener() {
-        public void onClick(View v) {
-            final LinearLayout linear = (LinearLayout) View.inflate(getActivity(), R.layout.custom_dialog, null);
-            TextView etwifiname = (TextView) linear.findViewById(R.id.wifi_name);
-            TextView etmac = (TextView) linear.findViewById(R.id.mac_address);
-            EditText etpassword = (EditText) linear.findViewById(R.id.wifi_password);
 
-            setWiFiStatus(getActivity(), etmac, etwifiname);
-            new AlertDialog.Builder(getActivity())
-                    .setTitle("와이파이등록")
-                    .setIcon(R.drawable.wifi)
-                    .setView(linear)
-                    .setPositiveButton("등록", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            startProgresss();
-                            try {
-                                String password = encrypt(etpassword.getText().toString(), KEY);
-                                wifiEnrollModel.setWifiPassword(password);
-                                registWifi(wifiEnrollModel);
-                                createWifiAssetObject(wifiEnrollModel.getMac(), wifiEnrollModel.getWifiName(), credential.getAddress());
-                            } catch (Exception e) {
-                                e.printStackTrace();
+
+    RecyclerView.OnItemTouchListener onItemTouchListener = new RecyclerView.OnItemTouchListener() {
+
+        @Override
+        public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {
+            //손으로 터치한 곳의 좌표를 토대로 해당 Item의 View를 가져옴
+            View childView = rv.findChildViewUnder(e.getX(),e.getY());
+
+            //터치한 곳의 View가 RecyclerView 안의 아이템이고 그 아이템의 View가 null이 아니라
+            //정확한 Item의 View를 가져왔고, gestureDetector에서 한번만 누르면 true를 넘기게 구현했으니
+            //한번만 눌려서 그 값이 true가 넘어왔다면
+            if(childView != null && gestureDetector.onTouchEvent(e)) {
+
+                final LinearLayout linear = (LinearLayout) View.inflate(getActivity(), R.layout.modify_custom_dialog, null);
+                TextView modwifiname = (TextView) linear.findViewById(R.id.wifi_name);
+                TextView modmac = (TextView) linear.findViewById(R.id.mac_address);
+                EditText modpassword = (EditText) linear.findViewById(R.id.wifi_password);
+                Switch modswitch = (Switch) linear.findViewById(R.id.status_switch);
+
+                //현재 터치된 곳의 position을 가져오고
+                int currentPosition = rv.getChildAdapterPosition(childView);
+                WifiEnrollModel wifiModifyModel = mItems.get(currentPosition);
+
+                //해당 위치의 Data를 가져옴
+                String originPassword = wifiModifyModel.getWifiPassword();
+                modwifiname.setText( wifiModifyModel.getWifiName());
+                modmac.setText( wifiModifyModel.getMac());
+                modswitch.setChecked(wifiModifyModel.getEnable());
+
+                //임시로 해놓는것
+                modpassword.setText(wifiModifyModel.getWifiPassword());
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                builder.setTitle("와이파이수정");
+                builder.setIcon(R.drawable.wifi);
+                builder.setView(linear);
+                switchChecked(modswitch, wifiModifyModel);
+
+                builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                modifyProgresss(); //로딩
+                                try {
+                                    if(originPassword != modpassword.getText().toString()){
+                                        String newpassword = encrypt(modpassword.getText().toString(), KEY);
+                                        wifiModifyModel.setWifiPassword(newpassword);
+                                        setWifiPassword(wifiModifyModel.getMac(),wifiModifyModel.getWifiPassword());
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+
                             }
+                        });
+                builder.setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Toast.makeText(getContext(), "와이파이 수정을 취소하셨습니다.", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                builder.show();
 
-                        }
-                    })
-                    .setNegativeButton("취소", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Toast.makeText(getContext(), "와이파이 등록을 취소하셨습니다.", Toast.LENGTH_SHORT).show();
-                        }
-                    }).show();
+                return true;
+            }
+
+            return false;
+        }
+        @Override
+        public void onTouchEvent(RecyclerView rv, MotionEvent e) {
+        }
+        @Override
+        public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
         }
     };
 
-    private void createWifiAssetObject(String macAddress, String ssid, String owner) {
-        mRealm.beginTransaction();
-        // RealmResults<WifiAssetModel> wifiAssetModels = mRealm.where(WifiAssetModel.class).findAll();
-        WifiAssetModel wifiAssetModel;
-        try {
-            wifiAssetModel = mRealm.createObject(WifiAssetModel.class, macAddress);
-            wifiAssetModel.setSsid(ssid.substring(1, ssid.length() - 1));
-            wifiAssetModel.setOwner(owner);
-            Log.d("Wifi Asset Registration", wifiAssetModel.toString());
-        } catch (Exception e) {
-            Toast.makeText(getContext(), "the Name already exist", Toast.LENGTH_SHORT).show();
-        }
-        mRealm.commitTransaction();
-    }
-
-    public void setWiFiStatus(Context mContext, TextView etmac, TextView etwifiname) {
-        WifiManager manager = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
-        WifiInfo wifiInfo = manager.getConnectionInfo();
-        wifiEnrollModel = new WifiEnrollModel(wifiInfo.getBSSID(), wifiInfo.getSSID(), "", 0);
-        etwifiname.setText(wifiInfo.getSSID().replace('\"', '\0'));
-        etmac.setText(wifiInfo.getBSSID());
-    }
-
-    private void registWifi(WifiEnrollModel wifiEnrollModel) {
-        new AsyncTask() {
+    public void switchChecked( Switch sw , WifiEnrollModel wifiModifyModel){
+        sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            protected Object doInBackground(Object[] objects) {
-                try {
-                    contract = EtherWifiToken.load(contractAddress, web3j, credential, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
-                    Log.d("TAG", wifiEnrollModel.getMac());
-                    TransactionReceipt tr = contract.addAccessPoint(wifiEnrollModel.getMac(), wifiEnrollModel.getWifiName(), wifiEnrollModel.getWifiPassword()).send();
-                    progressOFF();
-                } catch (Exception e) {
-                    e.printStackTrace();
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+                // TODO Auto-generated method stub
+                if(isChecked){
+                    sw.setChecked(true);
+                    wifiModifyModel.setEnable(true);
+                    setWifiStatus(wifiModifyModel.getMac(), true);
+                }else{
+                    sw.setChecked(false);
+                    wifiModifyModel.setEnable(false);
+                    setWifiStatus(wifiModifyModel.getMac(), false);
+
                 }
-                return null;
             }
-        }.execute();
+        });
     }
+
 
     /**
      * @notice  와이파이 공유상태 활성 및 비활성
@@ -337,6 +379,94 @@ public class WifiEnrollFragment extends LoadingFragment {
             getAvailabilityFromContract(mItems.get(i).getMac(), i);
         }
     }
+
+
+
+    //플로팅버튼 클릭 함수
+    private View.OnClickListener clickFab = new View.OnClickListener() {
+        public void onClick(View v) {
+            final LinearLayout linear = (LinearLayout) View.inflate(getActivity(), R.layout.register_custom_dialog, null);
+            TextView etwifiname = (TextView) linear.findViewById(R.id.wifi_name);
+            TextView etmac = (TextView) linear.findViewById(R.id.mac_address);
+            EditText etpassword = (EditText) linear.findViewById(R.id.wifi_password);
+
+            setWiFiStatus(getActivity(), etmac, etwifiname);
+            new AlertDialog.Builder(getActivity())
+                    .setTitle("와이파이등록")
+                    .setIcon(R.drawable.wifi)
+                    .setView(linear)
+                    .setPositiveButton("등록", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            startProgresss();
+                            try {
+                                String password = encrypt(etpassword.getText().toString(), KEY);
+                                wifiEnrollModel.setWifiPassword(password);
+                                registWifi(wifiEnrollModel);
+                                createWifiAssetObject(wifiEnrollModel.getMac(), wifiEnrollModel.getWifiName(), credential.getAddress());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+                    })
+                    .setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Toast.makeText(getContext(), "와이파이 등록을 취소하셨습니다.", Toast.LENGTH_SHORT).show();
+                        }
+                    }).show();
+        }
+    };
+
+
+    private void createWifiAssetObject(String macAddress, String ssid, String owner) {
+        mRealm.beginTransaction();
+        // RealmResults<WifiAssetModel> wifiAssetModels = mRealm.where(WifiAssetModel.class).findAll();
+        WifiAssetModel wifiAssetModel;
+        try {
+            wifiAssetModel = mRealm.createObject(WifiAssetModel.class, macAddress);
+            wifiAssetModel.setSsid(ssid.substring(1, ssid.length() - 1));
+            wifiAssetModel.setOwner(owner);
+            Log.d("Wifi Asset Registration", wifiAssetModel.toString());
+        } catch (Exception e) {
+            Toast.makeText(getContext(), "the Name already exist", Toast.LENGTH_SHORT).show();
+        }
+        mRealm.commitTransaction();
+    }
+
+    public void setWiFiStatus(Context mContext, TextView etmac, TextView etwifiname) {
+
+        WifiManager manager = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInfo = manager.getConnectionInfo();
+        wifiEnrollModel = new WifiEnrollModel(wifiInfo.getBSSID(), wifiInfo.getSSID(), "", 0);
+        etwifiname.setText(wifiInfo.getSSID().replace('\"', '\0'));
+        etmac.setText(wifiInfo.getBSSID());
+
+    }
+
+
+    private void registWifi(WifiEnrollModel wifiEnrollModel) {
+        new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                try {
+                    contract = EtherWifiToken.load(contractAddress, web3j, credential, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
+                    Log.d("TAG", wifiEnrollModel.getMac());
+                    TransactionReceipt tr = contract.addAccessPoint(wifiEnrollModel.getMac(), wifiEnrollModel.getWifiName(), wifiEnrollModel.getWifiPassword()).send();
+                    progressOFF();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+        }.execute();
+    }
+
+
+
+
+
 
     public void getAvailabilityFromContract(String macAddress, int position) {
         new AsyncTask() {
@@ -391,6 +521,10 @@ public class WifiEnrollFragment extends LoadingFragment {
     public void startProgresss() {
         progressON(this.getActivity(), "올리는중...");
     }
+    public void modifyProgresss(){
+        progressON(this.getActivity(), "수정중...");
+    }
+
 //    @Override
 //    public void onRefresh(){
 //        pullToRefresh.setRefreshing(true);
