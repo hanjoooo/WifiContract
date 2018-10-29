@@ -362,8 +362,8 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
                         mItems.get(position).setPassword(password);
                         mItems.get(position).setAvai(true);
                         adapter.notifyItemChanged(position);
-                        progressOFF();
                     }
+                    progressOFF();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

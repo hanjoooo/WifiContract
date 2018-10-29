@@ -26,15 +26,12 @@ import android.view.ViewGroup;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
 import com.example.khanj.wificontract.R;
 import com.example.khanj.wificontract.adapter.WifiEnrollAdapter;
-import com.example.khanj.wificontract.adapter.WifiListAdapter;
 import com.example.khanj.wificontract.loading.LoadingFragment;
 import com.example.khanj.wificontract.model.WalletModel;
 import com.example.khanj.wificontract.model.WifiAssetModel;
@@ -418,7 +415,6 @@ public class WifiEnrollFragment extends LoadingFragment {
                     .setPositiveButton("등록", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            startProgresss();
                             try {
                                 String password = encrypt(etpassword.getText().toString(), KEY);
                                 wifiEnrollModel.setWifiPassword(password);
@@ -467,6 +463,7 @@ public class WifiEnrollFragment extends LoadingFragment {
 
 
     private void registWifi(WifiEnrollModel wifiEnrollModel) {
+        startProgresss();
         new AsyncTask() {
             @Override
             protected Object doInBackground(Object[] objects) {
