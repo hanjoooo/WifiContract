@@ -364,6 +364,8 @@ public class WifiEnrollFragment extends LoadingFragment {
                 try {
                     contract = EtherWifiToken.load(contractAddress, web3j, credential, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
                     TransactionReceipt tr = contract.setStatus(macAddress, status).send();
+                    Log.d("Tags","finised");
+                    progressOFF();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -383,6 +385,7 @@ public class WifiEnrollFragment extends LoadingFragment {
                 try {
                     contract = EtherWifiToken.load(contractAddress, web3j, credential, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
                     TransactionReceipt tr = contract.setPassword(macAddress, password).send();
+                    progressOFF();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
