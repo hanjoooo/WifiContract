@@ -34,17 +34,17 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="40dp">
+        android:layout_height="40dp"
+        android:gravity="center">
 
         <TextView
-            android:layout_marginLeft="65dp"
             android:layout_width="110dp"
             android:layout_height="wrap_content"
-            android:text="Wifi Status"/>
+            android:text="Wifi Status" />
 
         <Switch
             android:id="@+id/status_switch"
-            android:layout_width="wrap_content"
+            android:layout_width="120dp"
             android:layout_height="wrap_content"/>
 
 
