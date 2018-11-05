@@ -77,7 +77,6 @@ public class MainActivity extends AppCompatActivity {
                 .build();
         Realm.setDefaultConfiguration(config);
 
-
         replaceViewPager(new WiFiListFragment());
         txt_title.setText("WIFI");
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
