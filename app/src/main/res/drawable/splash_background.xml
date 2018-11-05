@@ -2,7 +2,7 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- 배경 -->
     <item
-        android:drawable="@color/colorPrimary"/>
+        android:drawable="@color/textColorWhitePrimary"/>
     <!-- 로고 -->
     <item>
         <bitmap
