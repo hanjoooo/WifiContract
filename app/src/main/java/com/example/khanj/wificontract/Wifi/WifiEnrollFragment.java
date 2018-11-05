@@ -67,6 +67,26 @@ import io.realm.RealmResults;
  */
 public class WifiEnrollFragment extends LoadingFragment {
 
+    private enum ProgressType {
+        UPLOAD {
+            public String toString() {
+                return "올리는중...";
+            }
+        },
+
+        LOAD {
+            public String toString() {
+                return "불러오는중...";
+            }
+        },
+
+        MODIFY {
+            public String toString() {
+                return "수정중...";
+            }
+        }
+    }
+
     private LinearLayout noListData;
     private SwipeRefreshLayout pullToRefresh;
     private WifiEnrollAdapter adapter;
@@ -84,7 +104,7 @@ public class WifiEnrollFragment extends LoadingFragment {
 
     private Web3j web3j;
     private Credentials credential;
-    private String contractAddress = "0x49d4dd5d50b0f6bfd5f08fbc4734023d02feda44";
+    private String contractAddress = "0x31D05C8b7D054182f1Eb2922e8627d8511a663E1";
     private final String KEY = "201110911220131220652012122335";
     private EtherWifiToken contract;
     private WalletModel walletModel = new WalletModel();
@@ -127,10 +147,18 @@ public class WifiEnrollFragment extends LoadingFragment {
 
         mItems.clear();
         getWifiAssetObject();
-        getWifiInfoFromContract();
+        getAvailability();
 
         noListData.setVisibility(View.GONE);
         txWifinum.setText("" + mItems.size());
+
+        /*
+        // if you want to remove wifi asset list from realm, activate this codes
+        Realm mRealm = Realm.getDefaultInstance();
+        mRealm.beginTransaction();
+        wifiAssetModel.deleteAllFromRealm();
+        mRealm.commitTransaction();
+        */
         return v;
 
     }
@@ -147,6 +175,13 @@ public class WifiEnrollFragment extends LoadingFragment {
         }
         if (wifiAssetModel.size() > 0) {
             adapter.notifyDataSetChanged();
+        }
+    }
+
+    private void getAvailability () {
+        startProgresss(ProgressType.LOAD);
+        for (int i = 0; i < mItems.size(); ++i) {
+            getAvailabilityFromContract(mItems.get(i).getMac(), i);
         }
     }
 
@@ -236,8 +271,6 @@ public class WifiEnrollFragment extends LoadingFragment {
     private void setAddItem(View v) {
     }
 
-
-
     RecyclerView.OnItemTouchListener onItemTouchListener = new RecyclerView.OnItemTouchListener() {
 
         @Override
@@ -265,7 +298,6 @@ public class WifiEnrollFragment extends LoadingFragment {
                 modmac.setText( wifiModifyModel.getMac());
                 modswitch.setChecked(wifiModifyModel.getEnable());
 
-
                 String originPassword = wifiModifyModel.getWifiPassword();//복호화된 비밀번호
                 Boolean statusflag = wifiModifyModel.getEnable();
 
@@ -289,7 +321,7 @@ public class WifiEnrollFragment extends LoadingFragment {
                 builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                modifyProgresss(); //로딩
+                                startProgresss(ProgressType.MODIFY); //수정
                                 try {
                                     // 비밀번호 수정
                                     if( modpassword.getText().toString()!=null && !originPassword.equals(modpassword.getText().toString()) ){
@@ -352,7 +384,6 @@ public class WifiEnrollFragment extends LoadingFragment {
         });
     }
 
-
     /**
      * @notice  와이파이 공유상태 활성 및 비활성
      * function setStatus(string _macAddress, bool _switch) public accessPointOwner(_macAddress)
@@ -394,14 +425,6 @@ public class WifiEnrollFragment extends LoadingFragment {
         }.execute();
     }
 
-    public void getWifiInfoFromContract() {
-        for (int i = 0; i < mItems.size(); ++i) {
-            getAvailabilityFromContract(mItems.get(i).getMac(), i);
-        }
-    }
-
-
-
     //플로팅버튼 클릭 함수
     private View.OnClickListener clickFab = new View.OnClickListener() {
         public void onClick(View v) {
@@ -438,7 +461,6 @@ public class WifiEnrollFragment extends LoadingFragment {
         }
     };
 
-
     private void createWifiAssetObject(String macAddress, String ssid, String owner) {
         mRealm.beginTransaction();
         // RealmResults<WifiAssetModel> wifiAssetModels = mRealm.where(WifiAssetModel.class).findAll();
@@ -466,7 +488,7 @@ public class WifiEnrollFragment extends LoadingFragment {
 
 
     private void registWifi(WifiEnrollModel wifiEnrollModel) {
-        startProgresss();
+        startProgresss(ProgressType.UPLOAD);
         new AsyncTask() {
             @Override
             protected Object doInBackground(Object[] objects) {
@@ -483,11 +505,6 @@ public class WifiEnrollFragment extends LoadingFragment {
         }.execute();
     }
 
-
-
-
-
-
     public void getAvailabilityFromContract(String macAddress, int position) {
         new AsyncTask() {
             @Override
@@ -502,7 +519,7 @@ public class WifiEnrollFragment extends LoadingFragment {
                         String password = decrypt(contractWifiInfo.getValue1(), KEY);
                         mItems.get(position).setWifiPassword(password);
                         mItems.get(position).setEnable(isEnable);
-                        adapter.notifyItemChanged(position);
+                        // adapter.notifyItemChanged(position);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -513,7 +530,10 @@ public class WifiEnrollFragment extends LoadingFragment {
             @Override
             protected void onPostExecute(Object o) {
                 super.onPostExecute(o);
-                // if (index == mItems.size() - 1) adapter.notifyDataSetChanged();
+                if (position == mItems.size() - 1) {
+                    adapter.notifyDataSetChanged();
+                    progressOFF();
+                }
             }
 
             @Override
@@ -538,11 +558,8 @@ public class WifiEnrollFragment extends LoadingFragment {
         return new String(results, "UTF-8");
     }
 
-    public void startProgresss() {
-        progressON(this.getActivity(), "올리는중...");
-    }
-    public void modifyProgresss(){
-        progressON(this.getActivity(), "수정중...");
+    public void startProgresss(ProgressType status) {
+        progressON(this.getActivity(), status.toString());
     }
 
 //    @Override
