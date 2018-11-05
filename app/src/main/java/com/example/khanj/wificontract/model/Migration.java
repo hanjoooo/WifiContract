@@ -1,4 +1,4 @@
-package com.example.khanj.wificontract;
+package com.example.khanj.wificontract.model;
 
 import android.util.Log;
 
