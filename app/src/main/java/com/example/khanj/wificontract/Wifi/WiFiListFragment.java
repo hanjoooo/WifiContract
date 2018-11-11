@@ -55,6 +55,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -65,7 +67,7 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 
 
-public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLayout.OnRefreshListener {
+public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLayout.OnRefreshListener, View.OnClickListener {
 
     private static final String TAG = WiFiListFragment.class.getName();
     private WifiListAdapter adapter;
@@ -89,7 +91,14 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
     private Boolean cancels = false;
     private Boolean refreshFlag = true;
 
+    private WifiListModel item;
     private AlertDialog ad = null;
+    private int num;
+    private Button adButton;
+    private Timer timer;
+    Runnable runnable;
+    Boolean isStopped = false;
+    private final android.os.Handler handler = new android.os.Handler();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -129,7 +138,7 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
                 //한번만 눌려서 그 값이 true가 넘어왔다면
                 if (childView != null && gestureDetector.onTouchEvent(e)) {
                     int currentPosition = rv.getChildAdapterPosition(childView);
-                    WifiListModel item = adapter.getObject(currentPosition);
+                    item = adapter.getObject(currentPosition);
 
                     String ssid = item.getSsid();
                     String password = item.getPassword();
@@ -187,7 +196,7 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
                         }
                     } else {
                         if (item.getAvai()) {
-                            rentWiFi(wfc, password);
+                            rentWiFi();
                         } else {
                             AlertDialog.Builder ad = new AlertDialog.Builder(WiFiListFragment.this.getActivity());
                             ad.setTitle("비밀번호");
@@ -411,6 +420,7 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
         getContext().unregisterReceiver(receiver);
         if (ad != null) {
             ad.dismiss();
+            isStopped = true;
         }
         cancels = true;
         refreshFlag = true;
@@ -434,31 +444,74 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
         }, 2000);
     }
 
-    public void rentWiFi(WifiConfiguration wfc, String password) {
-
+    public void rentWiFi() {
         final LinearLayout linear = (LinearLayout) View.inflate(getActivity(), R.layout.custom_dialog_advertisement, null);
         ImageView adImage = (ImageView) linear.findViewById(R.id.iv_advertisement);
-        Button adButton = (Button) linear.findViewById(R.id.btn_connect_wifi);
+        adButton = (Button) linear.findViewById(R.id.btn_connect_wifi);
         adButton.setEnabled(false);
+        adButton.setOnClickListener(this);
         Drawable drawable = getResources().getDrawable(R.drawable.wifi_splash);
         adImage.setImageDrawable(drawable);
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this.getActivity());
-        builder.setTitle("광고 시청");
-        builder.setView(linear);
-        // builder.setCancelable(true);
-        ad = builder.show();
+        num = 15;
+        isStopped = false;
+        ad = new AlertDialog.Builder(this.getActivity())
+                .setTitle("광고 시청")
+                .setView(linear)
+                .setCancelable(false)
+                .show();
 
-        wfc.preSharedKey = "\"".concat(password).concat("\"");
-        WifiManager wfMgr = (WifiManager) getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        int networkId = wfMgr.addNetwork(wfc);
-        wfMgr.disconnect();
-        wfMgr.enableNetwork(networkId, true);
-        Boolean isConnected = wfMgr.reconnect();
-        if (isConnected) {
-            Toast.makeText(getContext(), "Connect success", Toast.LENGTH_SHORT);
-        } else {
-            Toast.makeText(getContext(), "Connect failed", Toast.LENGTH_SHORT);
+        TimerTask timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                updateButton();
+            }
+        };
+        timer = new Timer();
+        timer.schedule(timerTask, 0, 1000);
+    }
+
+    private void updateButton() {
+        runnable = new Runnable() {
+            @Override
+            public void run() {
+                if (num > 0 && !isStopped) {
+                    adButton.setText(num + "초 남음");
+                    num--;
+                } else {
+                    adButton.setText("연결하기");
+                    adButton.setEnabled(true);
+                    num = 15;
+                    timer.cancel();
+                }
+            }
+        };
+        handler.post(runnable);
+    }
+
+    @Override
+    public void onClick(View v) {
+        if (v.getId() == R.id.btn_connect_wifi) {
+            String ssid = item.getSsid();
+            String password = item.getPassword();
+            Log.d(TAG, ssid + " " + password);
+            WifiConfiguration wfc = new WifiConfiguration();
+            wfc.status = WifiConfiguration.Status.DISABLED;
+            wfc.priority = 40;
+            wfc.SSID = "\"".concat(ssid).concat("\"");
+            wfc.preSharedKey = "\"".concat(password).concat("\"");
+            WifiManager wfMgr = (WifiManager) getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            int networkId = wfMgr.addNetwork(wfc);
+            wfMgr.disconnect();
+            wfMgr.enableNetwork(networkId, true);
+            Boolean isConnected = wfMgr.reconnect();
+            Log.d(TAG, "Connected" + isConnected);
+            ad.dismiss();
+            if (isConnected) {
+                Toast.makeText(getContext(), "Connect success", Toast.LENGTH_SHORT);
+            } else {
+                Toast.makeText(getContext(), "Connect failed", Toast.LENGTH_SHORT);
+            }
         }
     }
 
