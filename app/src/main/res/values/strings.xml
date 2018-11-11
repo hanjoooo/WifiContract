@@ -10,7 +10,7 @@
     <string name="textview_etherbase">Etherbase</string>
     <string name="textview_account_address">Account address</string>
     <string name="title_activity_main">MainActivity</string>
-
+    <string name="btn_connect_wifi">Connect</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

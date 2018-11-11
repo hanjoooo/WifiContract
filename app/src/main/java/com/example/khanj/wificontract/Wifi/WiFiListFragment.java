@@ -22,11 +22,15 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Base64;
 import android.util.Log;
 import android.view.GestureDetector;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.example.khanj.wificontract.R;
@@ -84,6 +88,8 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
 
     private Boolean cancels = false;
     private Boolean refreshFlag = true;
+
+    private AlertDialog ad = null;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -403,6 +409,9 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
     public void onPause() {
         super.onPause();
         getContext().unregisterReceiver(receiver);
+        if (ad != null) {
+            ad.dismiss();
+        }
         cancels = true;
         refreshFlag = true;
     }
@@ -426,6 +435,20 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
     }
 
     public void rentWiFi(WifiConfiguration wfc, String password) {
+
+        final LinearLayout linear = (LinearLayout) View.inflate(getActivity(), R.layout.custom_dialog_advertisement, null);
+        ImageView adImage = (ImageView) linear.findViewById(R.id.iv_advertisement);
+        Button adButton = (Button) linear.findViewById(R.id.btn_connect_wifi);
+        adButton.setEnabled(false);
+        Drawable drawable = getResources().getDrawable(R.drawable.wifi_splash);
+        adImage.setImageDrawable(drawable);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this.getActivity());
+        builder.setTitle("광고 시청");
+        builder.setView(linear);
+        // builder.setCancelable(true);
+        ad = builder.show();
+
         wfc.preSharedKey = "\"".concat(password).concat("\"");
         WifiManager wfMgr = (WifiManager) getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         int networkId = wfMgr.addNetwork(wfc);
@@ -456,5 +479,4 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
     public void startProgresss() {
         progressON(this.getActivity(), "와이파이 찾는중...");
     }
-
 }
