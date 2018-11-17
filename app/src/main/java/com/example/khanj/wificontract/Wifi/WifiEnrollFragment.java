@@ -16,7 +16,6 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Base64;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
@@ -32,7 +31,9 @@ import android.widget.Toast;
 
 import com.example.khanj.wificontract.R;
 import com.example.khanj.wificontract.adapter.WifiEnrollAdapter;
+import com.example.khanj.wificontract.encryption.AESHelper;
 import com.example.khanj.wificontract.loading.LoadingFragment;
+import com.example.khanj.wificontract.loading.ProgressType;
 import com.example.khanj.wificontract.model.WalletModel;
 import com.example.khanj.wificontract.model.WifiAssetModel;
 import com.example.khanj.wificontract.model.WifiEnrollModel;
@@ -53,10 +54,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
 import contract.EtherWifiToken;
 import io.realm.Realm;
 import io.realm.RealmResults;
@@ -66,26 +63,6 @@ import io.realm.RealmResults;
  * A simple {@link Fragment} subclass.
  */
 public class WifiEnrollFragment extends LoadingFragment {
-
-    private enum ProgressType {
-        UPLOAD {
-            public String toString() {
-                return "올리는중...";
-            }
-        },
-
-        LOAD {
-            public String toString() {
-                return "불러오는중...";
-            }
-        },
-
-        MODIFY {
-            public String toString() {
-                return "수정중...";
-            }
-        }
-    }
 
     private LinearLayout noListData;
     private SwipeRefreshLayout pullToRefresh;
@@ -105,7 +82,6 @@ public class WifiEnrollFragment extends LoadingFragment {
     private Web3j web3j;
     private Credentials credential;
     private String contractAddress = "0x31D05C8b7D054182f1Eb2922e8627d8511a663E1";
-    private final String KEY = "201110911220131220652012122335";
     private EtherWifiToken contract;
     private WalletModel walletModel = new WalletModel();
     private String walletBalance;
@@ -136,7 +112,7 @@ public class WifiEnrollFragment extends LoadingFragment {
         rv_rollWifiList.setLayoutManager(new LinearLayoutManager(this.getActivity()));
         rv_rollWifiList.addOnItemTouchListener(onItemTouchListener);
 
-        gestureDetector = new GestureDetector(v.getContext(),new GestureDetector.SimpleOnGestureListener() {
+        gestureDetector = new GestureDetector(v.getContext(), new GestureDetector.SimpleOnGestureListener() {
 
             //누르고 뗄 때 한번만 인식하도록 하기위해서
             @Override
@@ -169,7 +145,7 @@ public class WifiEnrollFragment extends LoadingFragment {
         mRealm.commitTransaction();
         Log.d("getWifi", Integer.toString(wifiAssetModel.size()));
         for (int i = 0; i < wifiAssetModel.size(); i++) {
-            Log.d("getWifi",wifiAssetModel.get(i).getMacAddress() + wifiAssetModel.get(i).getSsid());
+            Log.d("getWifi", wifiAssetModel.get(i).getMacAddress() + wifiAssetModel.get(i).getSsid());
             mItems.add(new WifiEnrollModel(wifiAssetModel.get(i).getMacAddress(), wifiAssetModel.get(i).getSsid(), "1", 0));
             Log.d("TAG", String.valueOf(mItems.get(i)));
         }
@@ -178,7 +154,7 @@ public class WifiEnrollFragment extends LoadingFragment {
         }
     }
 
-    private void getAvailability () {
+    private void getAvailability() {
         startProgresss(ProgressType.LOAD);
         for (int i = 0; i < mItems.size(); ++i) {
             getAvailabilityFromContract(mItems.get(i).getMac(), i);
@@ -239,20 +215,6 @@ public class WifiEnrollFragment extends LoadingFragment {
         }.execute();
     }
 
-    private static String encrypt(String text, String key) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        byte[] keyBytes = new byte[16];
-        byte[] b = key.getBytes("UTF-8");
-        int len = b.length;
-        if (len > keyBytes.length) len = keyBytes.length;
-        System.arraycopy(b, 0, keyBytes, 0, len);
-        SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(keyBytes);
-        cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-        byte[] results = cipher.doFinal(text.getBytes("UTF-8"));
-        return Base64.encodeToString(results, 0);
-    }
-
     private void buildRecyclerView(View v) {
         tv_wifienrollnum = v.findViewById(R.id.tv_enroll_num);
         rv_rollWifiList = v.findViewById(R.id.rv_enroll_list);
@@ -276,12 +238,12 @@ public class WifiEnrollFragment extends LoadingFragment {
         @Override
         public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {
             //손으로 터치한 곳의 좌표를 토대로 해당 Item의 View를 가져옴
-            View childView = rv.findChildViewUnder(e.getX(),e.getY());
+            View childView = rv.findChildViewUnder(e.getX(), e.getY());
 
             //터치한 곳의 View가 RecyclerView 안의 아이템이고 그 아이템의 View가 null이 아니라
             //정확한 Item의 View를 가져왔고, gestureDetector에서 한번만 누르면 true를 넘기게 구현했으니
             //한번만 눌려서 그 값이 true가 넘어왔다면
-            if(childView != null && gestureDetector.onTouchEvent(e)) {
+            if (childView != null && gestureDetector.onTouchEvent(e)) {
 
                 final LinearLayout linear = (LinearLayout) View.inflate(getActivity(), R.layout.modify_custom_dialog, null);
                 TextView modwifiname = (TextView) linear.findViewById(R.id.wifi_name);
@@ -294,8 +256,8 @@ public class WifiEnrollFragment extends LoadingFragment {
                 WifiEnrollModel wifiModifyModel = mItems.get(currentPosition);
 
                 //해당 위치의 Data를 가져옴
-                modwifiname.setText( wifiModifyModel.getWifiName());
-                modmac.setText( wifiModifyModel.getMac());
+                modwifiname.setText(wifiModifyModel.getWifiName());
+                modmac.setText(wifiModifyModel.getMac());
                 modswitch.setChecked(wifiModifyModel.getEnable());
 
                 String originPassword = wifiModifyModel.getWifiPassword();//복호화된 비밀번호
@@ -319,41 +281,41 @@ public class WifiEnrollFragment extends LoadingFragment {
                 Log.d("ttttt", tm);
 
                 builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                startProgresss(ProgressType.MODIFY); //수정
-                                try {
-                                    // 비밀번호 수정
-                                    if( modpassword.getText().toString()!=null && !originPassword.equals(modpassword.getText().toString()) ){
-                                        wifiModifyModel.setWifiPassword(modpassword.getText().toString());
-                                        String newpassword = encrypt(modpassword.getText().toString(), KEY);
-                                        setWifiPassword(wifiModifyModel.getMac(), newpassword);
-                                        Toast.makeText(getContext(), "와이파이 비밀번호 수정.", Toast.LENGTH_SHORT).show();
-                                    }
-                                    // 상태 수정
-                                    // flag와 다를 때만 바꿔준다.
-                                    if(statusflag != modswitch.getShowText()){
-                                        wifiModifyModel.setEnable(modswitch.getShowText());
-                                        setWifiStatus( wifiModifyModel.getMac(), wifiModifyModel.getEnable() );
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        startProgresss(ProgressType.MODIFY); //수정
+                        try {
+                            // 비밀번호 수정
+                            if (modpassword.getText().toString() != null && !originPassword.equals(modpassword.getText().toString())) {
+                                wifiModifyModel.setWifiPassword(modpassword.getText().toString());
+                                String newpassword = AESHelper.encrypt(modpassword.getText().toString());
+                                setWifiPassword(wifiModifyModel.getMac(), newpassword);
+                                Toast.makeText(getContext(), "와이파이 비밀번호 수정.", Toast.LENGTH_SHORT).show();
+                            }
+                            // 상태 수정
+                            // flag와 다를 때만 바꿔준다.
+                            if (statusflag != modswitch.getShowText()) {
+                                wifiModifyModel.setEnable(modswitch.getShowText());
+                                setWifiStatus(wifiModifyModel.getMac(), wifiModifyModel.getEnable());
 
-                                        if(wifiModifyModel.getEnable()){
-                                            Toast.makeText(getContext(), "와이파이 활성", Toast.LENGTH_SHORT).show();
-                                        }else{
-                                            Toast.makeText(getContext(), "와이파이 비활성", Toast.LENGTH_SHORT).show();
-                                        }
-                                    }
-                                } catch (Exception e) {
-                                    e.printStackTrace();
+                                if (wifiModifyModel.getEnable()) {
+                                    Toast.makeText(getContext(), "와이파이 활성", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(getContext(), "와이파이 비활성", Toast.LENGTH_SHORT).show();
                                 }
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
 
-                            }
-                        });
+                    }
+                });
                 builder.setNegativeButton("취소", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                Toast.makeText(getContext(), "와이파이 수정을 취소하셨습니다.", Toast.LENGTH_SHORT).show();
-                            }
-                        });
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Toast.makeText(getContext(), "와이파이 수정을 취소하셨습니다.", Toast.LENGTH_SHORT).show();
+                    }
+                });
                 builder.show();
 
                 return true;
@@ -361,23 +323,25 @@ public class WifiEnrollFragment extends LoadingFragment {
 
             return false;
         }
+
         @Override
         public void onTouchEvent(RecyclerView rv, MotionEvent e) {
         }
+
         @Override
         public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
         }
     };
 
-    public void switchChecked( Switch sw , WifiEnrollModel wifiModifyModel){
+    public void switchChecked(Switch sw, WifiEnrollModel wifiModifyModel) {
         sw.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 
                 // TODO Auto-generated method stub
-                if(isChecked){
+                if (isChecked) {
                     sw.setChecked(true);
-                }else{
+                } else {
                     sw.setChecked(false);
                 }
             }
@@ -385,7 +349,7 @@ public class WifiEnrollFragment extends LoadingFragment {
     }
 
     /**
-     * @notice  와이파이 공유상태 활성 및 비활성
+     * @notice 와이파이 공유상태 활성 및 비활성
      * function setStatus(string _macAddress, bool _switch) public accessPointOwner(_macAddress)
      */
     private void setWifiStatus(String macAddress, Boolean status) {
@@ -395,7 +359,7 @@ public class WifiEnrollFragment extends LoadingFragment {
                 try {
                     contract = EtherWifiToken.load(contractAddress, web3j, credential, ManagedTransaction.GAS_PRICE, Contract.GAS_LIMIT);
                     TransactionReceipt tr = contract.setStatus(macAddress, status).send();
-                    Log.d("Tags","finised");
+                    Log.d("Tags", "finised");
                     progressOFF();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -406,7 +370,7 @@ public class WifiEnrollFragment extends LoadingFragment {
     }
 
     /**
-     * @notice  와이파이 비밀번호 재설정
+     * @notice 와이파이 비밀번호 재설정
      * function setPassword(string _macAddress, string _password) public accessPointOwner(_macAddress)
      */
     private void setWifiPassword(String macAddress, String password) {
@@ -442,7 +406,7 @@ public class WifiEnrollFragment extends LoadingFragment {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             try {
-                                String password = encrypt(etpassword.getText().toString(), KEY);
+                                String password = AESHelper.encrypt(etpassword.getText().toString());
                                 wifiEnrollModel.setWifiPassword(password);
                                 registWifi(wifiEnrollModel);
                                 createWifiAssetObject(wifiEnrollModel.getMac(), wifiEnrollModel.getWifiName(), credential.getAddress());
@@ -516,7 +480,7 @@ public class WifiEnrollFragment extends LoadingFragment {
                     Log.d("TAG", macAddress + "\t" + contractWifiInfo.getValue4().toString() + "\t" + position + "\t" + mItems.get(position).getWifiName());
                     Boolean isEnable = contractWifiInfo.getValue4();
                     if (isEnable) {
-                        String password = decrypt(contractWifiInfo.getValue1(), KEY);
+                        String password = AESHelper.decrypt(contractWifiInfo.getValue1());
                         mItems.get(position).setWifiPassword(password);
                         mItems.get(position).setEnable(isEnable);
                         // adapter.notifyItemChanged(position);
@@ -544,36 +508,8 @@ public class WifiEnrollFragment extends LoadingFragment {
         }.execute();
     }
 
-    private static String decrypt(String text, String key) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        byte[] keyBytes = new byte[16];
-        byte[] b = key.getBytes("UTF-8");
-        int len = b.length;
-        if (len > keyBytes.length) len = keyBytes.length;
-        System.arraycopy(b, 0, keyBytes, 0, len);
-        SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(keyBytes);
-        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
-        byte[] results = cipher.doFinal(Base64.decode(text, 0));
-        return new String(results, "UTF-8");
-    }
-
     public void startProgresss(ProgressType status) {
         progressON(this.getActivity(), status.toString());
     }
 
-//    @Override
-//    public void onRefresh(){
-//        pullToRefresh.setRefreshing(true);
-//        refreshContent();
-//    }
-//    public void refreshContent(){
-//        new Handler().postDelayed(new Runnable() {
-//            @Override public void run() {
-//                adapter.notifyDataSetChanged();
-//
-//            }
-//        }, 500);
-//        pullToRefresh.setRefreshing(false);
-//    }
 }

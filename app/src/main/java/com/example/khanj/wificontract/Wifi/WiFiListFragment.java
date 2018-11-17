@@ -19,10 +19,8 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Base64;
 import android.util.Log;
 import android.view.GestureDetector;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -35,6 +33,7 @@ import android.widget.Toast;
 
 import com.example.khanj.wificontract.R;
 import com.example.khanj.wificontract.adapter.WifiListAdapter;
+import com.example.khanj.wificontract.encryption.AESHelper;
 import com.example.khanj.wificontract.loading.LoadingFragment;
 import com.example.khanj.wificontract.model.WalletModel;
 import com.example.khanj.wificontract.model.WifiListModel;
@@ -58,10 +57,6 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
 import contract.EtherWifiToken;
 import io.realm.Realm;
 import io.realm.RealmResults;
@@ -82,7 +77,6 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
     private EtherWifiToken contract;
     private WalletModel walletModel = new WalletModel();
     private String contractAddress = "0x31D05C8b7D054182f1Eb2922e8627d8511a663E1";
-    private final String KEY = "201110911220131220652012122335";
     private Web3j web3j;
     private Credentials credential;
     private Realm mRealm;
@@ -177,7 +171,6 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
                         if (networkId != -1) {
                             wfMgr.enableNetwork(networkId, true);
                             Toast.makeText(getContext(), ssid, Toast.LENGTH_SHORT).show();
-
                         } else {
                             Toast.makeText(getContext(), ssid, Toast.LENGTH_SHORT).show();
                         }
@@ -192,7 +185,6 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
                         int networkId = wfMgr.addNetwork(wfc);
                         if (networkId != -1) {
                             wfMgr.enableNetwork(networkId, true);
-                        } else {
                         }
                     } else {
                         if (item.getAvai()) {
@@ -213,11 +205,6 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
                                     wfMgr.disconnect();
                                     wfMgr.enableNetwork(networkId, true);
                                     Boolean isConnected = wfMgr.reconnect();
-                                    if (isConnected) {
-                                        Toast.makeText(getContext(), "Connect success", Toast.LENGTH_SHORT);
-                                    } else {
-                                        Toast.makeText(getContext(), "Connect failed", Toast.LENGTH_SHORT);
-                                    }
                                     dialog.dismiss();
                                 }
                             });
@@ -303,8 +290,8 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
     private BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
             if (refreshFlag) {
-                final String action = intent.getAction();
                 mItems.clear();
                 startProgresss();
                 if (action.equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
@@ -329,10 +316,15 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
                         getAvailabilityFromContract(mItems.get(i).getBssid(), i);
                     }
                     refreshFlag = false;
-                } else if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
-                    getActivity().sendBroadcast(new Intent("wifi.ON_NETWORK_STATE_CHANGED"));
                 }
             }
+            /* @TODO 연결되었을 때 처리하기 (NetworkInfo를 얻어와서 item이랑 비교한 후 처리하기)
+            else if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
+                if () {
+                    Toast.makeText(getContext(), "Connect Success", Toast.LENGTH_SHORT).show();
+                }
+            }
+            */
         }
     };
 
@@ -368,7 +360,7 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
                     Tuple4<String, String, BigInteger, Boolean> contractWifiInfo = contract.getAccessPoint(macAddress).send();
                     Log.d("TAG", macAddress + "\t" + contractWifiInfo.getValue4().toString() + "\t" + position + "\t" + mItems.get(position).getSsid());
                     if (contractWifiInfo.getValue4()) {
-                        String password = decrypt(contractWifiInfo.getValue1(), KEY);
+                        String password = AESHelper.decrypt(contractWifiInfo.getValue1());
                         Log.d("COLOR UPDATED", mItems.get(position).getSsid());
                         mItems.get(position).setPassword(password);
                         mItems.get(position).setAvai(true);
@@ -494,42 +486,22 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
         if (v.getId() == R.id.btn_connect_wifi) {
             String ssid = item.getSsid();
             String password = item.getPassword();
-            Log.d(TAG, ssid + " " + password);
             WifiConfiguration wfc = new WifiConfiguration();
+            wfc.SSID = "\"".concat(ssid).concat("\"");
             wfc.status = WifiConfiguration.Status.DISABLED;
             wfc.priority = 40;
-            wfc.SSID = "\"".concat(ssid).concat("\"");
             wfc.preSharedKey = "\"".concat(password).concat("\"");
             WifiManager wfMgr = (WifiManager) getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
             int networkId = wfMgr.addNetwork(wfc);
             wfMgr.disconnect();
             wfMgr.enableNetwork(networkId, true);
             Boolean isConnected = wfMgr.reconnect();
-            Log.d(TAG, "Connected" + isConnected);
             ad.dismiss();
-            if (isConnected) {
-                Toast.makeText(getContext(), "Connect success", Toast.LENGTH_SHORT);
-            } else {
-                Toast.makeText(getContext(), "Connect failed", Toast.LENGTH_SHORT);
-            }
         }
-    }
-
-    private static String decrypt(String text, String key) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        byte[] keyBytes = new byte[16];
-        byte[] b = key.getBytes("UTF-8");
-        int len = b.length;
-        if (len > keyBytes.length) len = keyBytes.length;
-        System.arraycopy(b, 0, keyBytes, 0, len);
-        SecretKeySpec keySpec = new SecretKeySpec(keyBytes, "AES");
-        IvParameterSpec ivSpec = new IvParameterSpec(keyBytes);
-        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
-        byte[] results = cipher.doFinal(Base64.decode(text, 0));
-        return new String(results, "UTF-8");
     }
 
     public void startProgresss() {
         progressON(this.getActivity(), "와이파이 찾는중...");
     }
+
 }
