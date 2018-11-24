@@ -78,7 +78,7 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
 
     private EtherWifiToken contract;
     private WalletModel walletModel = new WalletModel();
-    private String contractAddress = "0x31D05C8b7D054182f1Eb2922e8627d8511a663E1";
+    private String contractAddress = "0xac89ec307e9fdff23ac26334fbbe0a313a9db938";
     private Web3j web3j;
     private Credentials credential;
     private Realm mRealm;
