@@ -37,6 +37,7 @@ import com.example.khanj.wificontract.encryption.AESHelper;
 import com.example.khanj.wificontract.loading.LoadingFragment;
 import com.example.khanj.wificontract.model.WalletModel;
 import com.example.khanj.wificontract.model.WifiListModel;
+import com.example.khanj.wificontract.service.WifiService;
 
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
@@ -65,6 +66,7 @@ import io.realm.RealmResults;
 public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLayout.OnRefreshListener, View.OnClickListener {
 
     private static final String TAG = WiFiListFragment.class.getName();
+    private static final int AD_TIME = 2;
     private WifiListAdapter adapter;
     private List<ScanResult> scanResults;
     private WifiManager wifiManager;
@@ -445,7 +447,7 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
         Drawable drawable = getResources().getDrawable(R.drawable.wifi_splash);
         adImage.setImageDrawable(drawable);
 
-        num = 15;
+        num = AD_TIME;
         isStopped = false;
         ad = new AlertDialog.Builder(this.getActivity())
                 .setTitle("광고 시청")
@@ -473,7 +475,7 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
                 } else {
                     adButton.setText("연결하기");
                     adButton.setEnabled(true);
-                    num = 15;
+                    num = AD_TIME;
                     timer.cancel();
                 }
             }
@@ -497,6 +499,9 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
             wfMgr.enableNetwork(networkId, true);
             Boolean isConnected = wfMgr.reconnect();
             ad.dismiss();
+            Intent intent = new Intent(getActivity(), WifiService.class);
+            intent.putExtra("ssid", item.getSsid());
+            getContext().startService(intent);
         }
     }
 
