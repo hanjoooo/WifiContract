@@ -306,7 +306,6 @@ public class WifiEnrollFragment extends LoadingFragment {
                 builder.setIcon(R.drawable.wifi);
                 builder.setView(linear);
 
-
                 // 스위치 체크
                 modswitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                     @Override
@@ -368,7 +367,6 @@ public class WifiEnrollFragment extends LoadingFragment {
         public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
         }
     };
-
 
     /**
      * @notice 와이파이 공유상태 활성 및 비활성
