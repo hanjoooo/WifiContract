@@ -23,7 +23,7 @@ public class ServiceThread extends Thread {
         while (isRun) {
             handler.sendEmptyMessage(0);
             try {
-                Thread.sleep(1000); // 1초 간격
+                Thread.sleep(5000); // 1초 간격
             } catch (Exception e) {
                 Log.d(TAG, "Thread Sleep Error Occured");
             }

@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
@@ -27,9 +28,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import android.widget.VideoView;
 
 import com.example.khanj.wificontract.R;
 import com.example.khanj.wificontract.adapter.WifiListAdapter;
@@ -63,10 +64,10 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 
 
-public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLayout.OnRefreshListener, View.OnClickListener {
+public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLayout.OnRefreshListener {
 
     private static final String TAG = WiFiListFragment.class.getName();
-    private static final int AD_TIME = 2;
+    private static final int AD_TIME = 10;
     private WifiListAdapter adapter;
     private List<ScanResult> scanResults;
     private WifiManager wifiManager;
@@ -440,17 +441,17 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
 
     public void rentWiFi() {
         final LinearLayout linear = (LinearLayout) View.inflate(getActivity(), R.layout.custom_dialog_advertisement, null);
-        ImageView adImage = (ImageView) linear.findViewById(R.id.iv_advertisement);
-        adButton = (Button) linear.findViewById(R.id.btn_connect_wifi);
-        adButton.setEnabled(false);
-        adButton.setOnClickListener(this);
-        Drawable drawable = getResources().getDrawable(R.drawable.wifi_splash);
-        adImage.setImageDrawable(drawable);
+        VideoView videoView = (VideoView) linear.findViewById(R.id.iv_advertisement);
+
+        Uri video = Uri.parse("android.resource://"+getActivity().getPackageName()+ "/raw/sexybody");
+        Log.d("sex",video.toString());
+        videoView.setVideoURI(video);
+        videoView.start();
+
 
         num = AD_TIME;
         isStopped = false;
-        ad = new AlertDialog.Builder(this.getActivity())
-                .setTitle("광고 시청")
+        ad = new AlertDialog.Builder(WiFiListFragment.this.getActivity())
                 .setView(linear)
                 .setCancelable(false)
                 .show();
@@ -463,6 +464,7 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
         };
         timer = new Timer();
         timer.schedule(timerTask, 0, 1000);
+
     }
 
     private void updateButton() {
@@ -470,39 +472,30 @@ public class WiFiListFragment extends LoadingFragment implements SwipeRefreshLay
             @Override
             public void run() {
                 if (num > 0 && !isStopped) {
-                    adButton.setText(num + "초 남음");
                     num--;
                 } else {
-                    adButton.setText("연결하기");
-                    adButton.setEnabled(true);
                     num = AD_TIME;
+                    String ssid = item.getSsid();
+                    String password = item.getPassword();
+                    WifiConfiguration wfc = new WifiConfiguration();
+                    wfc.SSID = "\"".concat(ssid).concat("\"");
+                    wfc.status = WifiConfiguration.Status.DISABLED;
+                    wfc.priority = 40;
+                    wfc.preSharedKey = "\"".concat(password).concat("\"");
+                    WifiManager wfMgr = (WifiManager) getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                    int networkId = wfMgr.addNetwork(wfc);
+                    wfMgr.disconnect();
+                    wfMgr.enableNetwork(networkId, true);
+                    Boolean isConnected = wfMgr.reconnect();
+                    ad.dismiss();
+                    Intent intent = new Intent(getActivity(), WifiService.class);
+                    intent.putExtra("ssid", item.getSsid());
+                    getContext().startService(intent);
                     timer.cancel();
                 }
             }
         };
         handler.post(runnable);
-    }
-
-    @Override
-    public void onClick(View v) {
-        if (v.getId() == R.id.btn_connect_wifi) {
-            String ssid = item.getSsid();
-            String password = item.getPassword();
-            WifiConfiguration wfc = new WifiConfiguration();
-            wfc.SSID = "\"".concat(ssid).concat("\"");
-            wfc.status = WifiConfiguration.Status.DISABLED;
-            wfc.priority = 40;
-            wfc.preSharedKey = "\"".concat(password).concat("\"");
-            WifiManager wfMgr = (WifiManager) getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-            int networkId = wfMgr.addNetwork(wfc);
-            wfMgr.disconnect();
-            wfMgr.enableNetwork(networkId, true);
-            Boolean isConnected = wfMgr.reconnect();
-            ad.dismiss();
-            Intent intent = new Intent(getActivity(), WifiService.class);
-            intent.putExtra("ssid", item.getSsid());
-            getContext().startService(intent);
-        }
     }
 
     public void startProgresss() {

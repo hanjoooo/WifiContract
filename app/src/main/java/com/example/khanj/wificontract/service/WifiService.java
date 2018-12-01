@@ -17,6 +17,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.khanj.wificontract.MainActivity;
 import com.example.khanj.wificontract.R;
@@ -46,13 +47,13 @@ public class WifiService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             group1 = new NotificationChannelGroup("channel_group_id", "channel_group_name");
             notiManager.createNotificationChannelGroup(group1);
-            NotificationChannel notificationChannel = new NotificationChannel("channel_id", "channel_name", NotificationManager.IMPORTANCE_DEFAULT);
+            NotificationChannel notificationChannel = new NotificationChannel("channel_id", "channel_name", NotificationManager.IMPORTANCE_LOW);
             notificationChannel.setDescription("channel description");
             notificationChannel.setGroup("channel_group_id");
-            notificationChannel.enableLights(true);
+            notificationChannel.enableLights(false);
             notificationChannel.setLightColor(Color.GREEN);
-            notificationChannel.enableVibration(true);
-            notificationChannel.setVibrationPattern(new long[]{100, 200, 100, 200});
+            //notificationChannel.setVibrationPattern(new long[]{0});
+            //notificationChannel.enableVibration(false);
             notificationChannel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
             notiManager.createNotificationChannel(notificationChannel);
         }
@@ -93,6 +94,32 @@ public class WifiService extends Service {
                             break;
                         }
                     }
+
+                    PendingIntent pendingIntent = PendingIntent.getActivity(WifiService.this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        notifi = new Notification.Builder(getApplicationContext(), "channel_name")
+                                .setContentTitle("와이파이 사용 종료")
+                                .setContentText("와이파이 사용을 종료했습니다")
+                                .setSmallIcon(R.drawable.wifi_strength_3)
+                                .setTicker("알림")
+                                .setChannelId("channel_id")
+                                .setContentIntent(pendingIntent)
+                                .build();
+                    } else {
+                        notifi = new Notification.Builder(getApplicationContext())
+                                .setContentTitle("와이파이 사용 종료")
+                                .setContentText("와이파이 사용을 종료했습니다")
+                                .setSmallIcon(R.drawable.wifi_strength_3)
+                                .setTicker("알림")
+                                .setContentIntent(pendingIntent)
+                                .build();
+                    }
+                    notifi.defaults = Notification.DEFAULT_SOUND;
+                    notifi.flags = Notification.FLAG_ONLY_ALERT_ONCE;
+                    notifi.flags = Notification.FLAG_AUTO_CANCEL;
+                    notiManager.notify(777, notifi);
+
+                    Toast.makeText(getApplicationContext(), "와이파이 사용을 종료합니다", Toast.LENGTH_SHORT).show();
                     Intent serviceIntent = new Intent(getApplicationContext(), WifiService.class);
                     getApplicationContext().stopService(serviceIntent);
                     notiManager.cancelAll(); // notificationManager.cancel(NOTIFICATION_ID);
@@ -158,7 +185,7 @@ public class WifiService extends Service {
                 return;
             }
             // refresh advertisement
-            if (sec % 20 == 0) {
+            if (sec % 30 == 0) {
                 Log.d("TAG", "advertisement call again");
                 Intent advertisementIntent = new Intent(getApplicationContext(), MainActivity.class);
                 advertisementIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

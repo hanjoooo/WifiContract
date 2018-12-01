@@ -5,16 +5,10 @@
     android:layout_width="match_parent"
     android:orientation="vertical">
 
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <VideoView
+        android:layout_width="match_parent"
+        android:layout_height="500dp"
         android:id="@+id/iv_advertisement"/>
 
-    <Button
-        android:layout_marginTop="50dp"
-        android:id="@+id/btn_connect_wifi"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="@string/btn_connect_wifi"/>
+
 </LinearLayout>
